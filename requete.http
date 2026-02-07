@@ -1,0 +1,147 @@
+### Variables globales
+@baseUrl = http://192.168.100.12:5000
+@contentType = application/json
+
+### Récupérer la liste des scanners WIA
+POST {{baseUrl}}/api/Scanner/list
+Content-Type: {{contentType}}
+
+{
+  "ScannerType": "WIA"
+}
+
+### 1. Test de l'API WIA Scanner
+
+# Exemple 1: Scan avec le driver WIA - Mode couleur, scanner à plat
+POST {{baseUrl}}/api/WiaScanner/scan-alternative
+Content-Type: application/json
+
+{
+  "scannerId": "{6BDD1FC6-810F-11D0-BEC7-08002BE2092F}\\0000",
+  "source": 0,
+  "colorMode": 2,
+  "resolution": 300,
+  "paperSize": 1,
+  "blankPageDetection": false,
+  "blankPageThreshold": 95,
+  "brightness": 0,
+  "contrast": 0
+}
+
+###
+
+# Exemple 2: Scan avec le driver WIA - Mode niveaux de gris, chargeur automatique
+POST {{baseUrl}}/api/WiaScanner/scan-alternative
+Content-Type: application/json
+
+{
+  "scannerId": "{6BDD1FC6-810F-11D0-BEC7-08002BE2092F}\\0000",
+  "source": 1,
+  "colorMode": 1,
+  "resolution": 200,
+  "paperSize": 1,
+  "blankPageDetection": true,
+  "blankPageThreshold": 90,
+  "brightness": 0,
+  "contrast": 0
+}
+
+###
+
+# Exemple 3: Scan avec le driver WIA - Mode noir et blanc, recto-verso
+POST {{baseUrl}}/api/WiaScanner/scan-alternative
+Content-Type: application/json
+
+{
+  "scannerId": "{6BDD1FC6-810F-11D0-BEC7-08002BE2092F}\\0001",
+  "source": 2,
+  "colorMode": 0,
+  "resolution": 150,
+  "paperSize": 3,
+  "blankPageDetection": true,
+  "blankPageThreshold": 95,
+  "brightness": -100,
+  "contrast": 200
+}
+
+### 2. Test de l'API TWAIN Scanner
+
+# Scan avec le driver TWAIN
+POST {{baseUrl}}/api/TwainScanner/scan
+Content-Type: application/json
+
+{
+  "scannerId": "PaperStream IP fi-7030",
+  "source": 2,
+  "colorMode": 2,
+  "resolution": 150,
+  "paperSize": 1,
+  "blankPageDetection": true,
+  "blankPageThreshold": 95,
+  "brightness": 0,
+  "contrast": 0
+}
+
+
+### 3. Test de la liste des scanners disponibles
+
+# Obtenir la liste des scanners
+POST {{baseUrl}}/api/Scanner/List
+Content-Type: application/json
+
+{
+  "scannerType": "ALL"
+}
+
+### 4. Test de l'API pour créer un scanner
+
+# Créer un scanner
+POST {{baseUrl}}/api/Scanner/Make
+Content-Type: application/json
+
+{
+  "driverType": "WIA",
+  "deviceName": "Test Scanner",
+  "deviceId": "device123"
+}
+
+### 5. Test de traitement côté serveur Laravel
+
+# Traitement du scan côté serveur
+POST http://localhost/admin/scan_one
+Content-Type: application/json
+X-CSRF-TOKEN: {{csrf_token}}
+
+{
+  "id_profile": "profile_1",
+  "fileName": "test_scan_processed.pdf",
+  "data": [
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+  ]
+}
+
+### Variables d'environnement
+@csrf_token = votre_token_csrf_ici
+
+### Exemples de valeurs pour les enums
+
+# ScannerSourceType:
+# 0 = Flatbed (Scanner à plat)
+# 1 = Feeder (Chargeur automatique)
+# 2 = Duplex (Recto-verso)
+
+# ScannerColorMode:
+# 0 = Noir et blanc (BlackWhite)
+# 1 = Niveaux de gris (Grayscale)
+# 2 = Couleur (RGB)
+
+# ScannerPaperSize:
+# 0 = TWSS_NONE (Scanner définit)
+# 1 = A4 (210 x 297 mm)
+# 2 = JISB5 (182 x 257 mm)
+# 3 = USLETTER (8.5 x 11 inches)
+# 4 = USLEGAL (8.5 x 14 inches)
+# 5 = A5 (148 x 210 mm)
+# 6 = B4 (250 x 353 mm)
+# 7 = B6 (125 x 176 mm)
+# 8 = A3 (297 x 420 mm)
