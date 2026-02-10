@@ -154,17 +154,17 @@ function ScanRibbon() {
   }
 
   return (
-    <div className="h-24 bg-[#f3f2f1] border-b border-[#edebe9] flex items-stretch py-1.5 px-2 overflow-x-auto custom-scrollbar shrink-0">
+    <div className="h-24 bg-[#f3f2f1] dark:bg-dark-bg border-b border-[#edebe9] dark:border-dark-border flex items-stretch py-1.5 px-2 overflow-x-auto custom-scrollbar shrink-0 transition-colors duration-200">
       {/* Scanner Selection Group */}
-      <div className="flex flex-col items-center px-3 border-r border-[#edebe9] h-full min-w-[250px]">
+      <div className="flex flex-col items-center px-3 border-r border-[#edebe9] dark:border-dark-border h-full min-w-[250px]">
         <div className="flex flex-1 items-center space-x-4 px-2 w-full">
           <div className="flex flex-col space-y-1 flex-1">
-            <span className="text-[10px] text-[#605e5c] uppercase font-bold tracking-tight">Scanner</span>
+            <span className="text-[10px] text-[#605e5c] dark:text-dark-text uppercase font-bold tracking-tight">Scanner</span>
             {scannersError ? (
-              <span className="text-[10px] text-red-500">Erreur de connexion</span>
+              <span className="text-[10px] text-red-500 dark:text-red-400">Erreur de connexion</span>
             ) : (
               <select
-                className="text-[11px] py-0.5 px-2 bg-white border-[#edebe9] rounded focus:ring-1 focus:ring-[#106EBE] w-full"
+                className="text-[11px] py-0.5 px-2 bg-white dark:bg-dark-bg border-[#edebe9] dark:border-dark-border rounded focus:ring-1 focus:ring-[#106EBE] dark:focus:ring-blue-500 text-[#605e5c] dark:text-dark-text w-full"
                 value={selectedScanner}
                 onChange={(e) => setSelectedScanner(e.target.value)}
                 disabled={scannersLoading || scanners.length === 0}
@@ -184,25 +184,25 @@ function ScanRibbon() {
             )}
             <div className="flex items-center space-x-2 mt-1">
               <span className={`w-2 h-2 rounded-full ${scannersError ? 'bg-red-400' : scanners.length > 0 ? 'bg-green-400' : 'bg-yellow-400'}`}></span>
-              <span className="text-[10px] text-[#605e5c]">
+              <span className="text-[10px] text-[#605e5c] dark:text-dark-text">
                 {scannersError ? 'Erreur' : scanners.length > 0 ? 'Prêt' : 'Attente'}
               </span>
             </div>
           </div>
         </div>
-        <span className="text-[10px] text-gray-400 mt-auto py-0.5">Scanner</span>
+        <span className="text-[10px] text-gray-400 dark:text-dark-textTertiary mt-auto py-0.5">Scanner</span>
       </div>
 
       {/* Scan Profile Group */}
-      <div className="flex flex-col items-center px-3 border-r border-[#edebe9] h-full min-w-[200px]">
+      <div className="flex flex-col items-center px-3 border-r border-[#edebe9] dark:border-dark-border h-full min-w-[200px]">
         <div className="flex flex-1 items-center space-x-4 px-2 w-full">
           <div className="flex flex-col space-y-1 flex-1">
-            <span className="text-[10px] text-[#605e5c] uppercase font-bold tracking-tight">Scan Profile</span>
+            <span className="text-[10px] text-[#605e5c] dark:text-dark-text uppercase font-bold tracking-tight">Scan Profile</span>
             {profilesError ? (
-              <span className="text-[10px] text-red-500">Error loading profiles</span>
+              <span className="text-[10px] text-red-500 dark:text-red-400">Error loading profiles</span>
             ) : (
               <select
-                className="text-[11px] py-0.5 px-2 bg-white border-[#edebe9] rounded focus:ring-1 focus:ring-[#106EBE] w-full"
+                className="text-[11px] py-0.5 px-2 bg-white dark:bg-dark-bg border-[#edebe9] dark:border-dark-border rounded focus:ring-1 focus:ring-[#106EBE] dark:focus:ring-blue-500 text-[#605e5c] dark:text-dark-text w-full"
                 value={selectedProfileId}
                 onChange={(e) => handleProfileChange(e.target.value)}
                 disabled={profilesLoading}
@@ -220,16 +220,16 @@ function ScanRibbon() {
             )}
           </div>
         </div>
-        <span className="text-[10px] text-gray-400 mt-auto py-0.5">Profile</span>
+        <span className="text-[10px] text-gray-400 dark:text-dark-textTertiary mt-auto py-0.5">Profile</span>
       </div>
 
       {/* Scan Settings Group */}
-      <div className="flex flex-col items-center px-3 border-r border-[#edebe9] h-full min-w-[400px]">
+      <div className="flex flex-col items-center px-3 border-r border-[#edebe9] dark:border-dark-border h-full min-w-[400px]">
         <div className="flex flex-1 items-center space-x-3 px-2 w-full overflow-x-auto">
           <div className="flex flex-col space-y-1 flex-1 min-w-[80px]">
-            <span className="text-[10px] text-[#605e5c]">Paper</span>
+            <span className="text-[10px] text-[#605e5c] dark:text-dark-text">Paper</span>
             <select
-              className="text-[11px] py-0.5 px-1 bg-white border-[#edebe9] rounded focus:ring-1 focus:ring-[#106EBE] w-full"
+              className="text-[11px] py-0.5 px-1 bg-white dark:bg-dark-bg border-[#edebe9] dark:border-dark-border rounded focus:ring-1 focus:ring-[#106EBE] dark:focus:ring-blue-500 text-[#605e5c] dark:text-dark-text w-full"
               value={currentSettings.paperSize}
               onChange={(e) => updateSetting('paperSize', e.target.value)}
             >
@@ -241,9 +241,9 @@ function ScanRibbon() {
           </div>
 
           <div className="flex flex-col space-y-1 flex-1 min-w-[80px]">
-            <span className="text-[10px] text-[#605e5c]">Mode</span>
+            <span className="text-[10px] text-[#605e5c] dark:text-dark-text">Mode</span>
             <select
-              className="text-[11px] py-0.5 px-1 bg-white border-[#edebe9] rounded focus:ring-1 focus:ring-[#106EBE] w-full"
+              className="text-[11px] py-0.5 px-1 bg-white dark:bg-dark-bg border-[#edebe9] dark:border-dark-border rounded focus:ring-1 focus:ring-[#106EBE] dark:focus:ring-blue-500 text-[#605e5c] dark:text-dark-text w-full"
               value={currentSettings.scanMode}
               onChange={(e) => updateSetting('scanMode', e.target.value)}
             >
@@ -254,9 +254,9 @@ function ScanRibbon() {
           </div>
 
           <div className="flex flex-col space-y-1 flex-1 min-w-[80px]">
-            <span className="text-[10px] text-[#605e5c]">Res (DPI)</span>
+            <span className="text-[10px] text-[#605e5c] dark:text-dark-text">Res (DPI)</span>
             <select
-              className="text-[11px] py-0.5 px-1 bg-white border-[#edebe9] rounded focus:ring-1 focus:ring-[#106EBE] w-full"
+              className="text-[11px] py-0.5 px-1 bg-white dark:bg-dark-bg border-[#edebe9] dark:border-dark-border rounded focus:ring-1 focus:ring-[#106EBE] dark:focus:ring-blue-500 text-[#605e5c] dark:text-dark-text w-full"
               value={currentSettings.resolution}
               onChange={(e) => updateSetting('resolution', e.target.value)}
             >
@@ -269,9 +269,9 @@ function ScanRibbon() {
           </div>
 
           <div className="flex flex-col space-y-1 flex-1 min-w-[80px]">
-            <span className="text-[10px] text-[#605e5c]">Align</span>
+            <span className="text-[10px] text-[#605e5c] dark:text-dark-text">Align</span>
             <select
-              className="text-[11px] py-0.5 px-1 bg-white border-[#edebe9] rounded focus:ring-1 focus:ring-[#106EBE] w-full"
+              className="text-[11px] py-0.5 px-1 bg-white dark:bg-dark-bg border-[#edebe9] dark:border-dark-border rounded focus:ring-1 focus:ring-[#106EBE] dark:focus:ring-blue-500 text-[#605e5c] dark:text-dark-text w-full"
               value={currentSettings.horizontalAlign}
               onChange={(e) => updateSetting('horizontalAlign', e.target.value)}
             >
@@ -282,9 +282,9 @@ function ScanRibbon() {
           </div>
 
           <div className="flex flex-col space-y-1 flex-1 min-w-[70px]">
-            <span className="text-[10px] text-[#605e5c]">Scale</span>
+            <span className="text-[10px] text-[#605e5c] dark:text-dark-text">Scale</span>
             <select
-              className="text-[11px] py-0.5 px-1 bg-white border-[#edebe9] rounded focus:ring-1 focus:ring-[#106EBE] w-full"
+              className="text-[11px] py-0.5 px-1 bg-white dark:bg-dark-bg border-[#edebe9] dark:border-dark-border rounded focus:ring-1 focus:ring-[#106EBE] dark:focus:ring-blue-500 text-[#605e5c] dark:text-dark-text w-full"
               value={currentSettings.scale}
               onChange={(e) => updateSetting('scale', e.target.value)}
             >
@@ -298,33 +298,33 @@ function ScanRibbon() {
           </div>
 
           <div className="flex flex-col space-y-1 flex-1 min-w-[70px]">
-            <span className="text-[10px] text-[#605e5c]">Bright</span>
+            <span className="text-[10px] text-[#605e5c] dark:text-dark-text">Bright</span>
             <input
               type="number"
               min="0"
               max="100"
-              className="text-[11px] py-0.5 px-1 bg-white border-[#edebe9] rounded focus:ring-1 focus:ring-[#106EBE] w-full"
+              className="text-[11px] py-0.5 px-1 bg-white dark:bg-dark-bg border-[#edebe9] dark:border-dark-border rounded focus:ring-1 focus:ring-[#106EBE] dark:focus:ring-blue-500 text-[#605e5c] dark:text-dark-text w-full"
               value={currentSettings.brightness}
               onChange={(e) => updateSetting('brightness', parseInt(e.target.value) || 0)}
             />
           </div>
 
           <div className="flex flex-col space-y-1 flex-1 min-w-[70px]">
-            <span className="text-[10px] text-[#605e5c]">Contrast</span>
+            <span className="text-[10px] text-[#605e5c] dark:text-dark-text">Contrast</span>
             <input
               type="number"
               min="0"
               max="100"
-              className="text-[11px] py-0.5 px-1 bg-white border-[#edebe9] rounded focus:ring-1 focus:ring-[#106EBE] w-full"
+              className="text-[11px] py-0.5 px-1 bg-white dark:bg-dark-bg border-[#edebe9] dark:border-dark-border rounded focus:ring-1 focus:ring-[#106EBE] dark:focus:ring-blue-500 text-[#605e5c] dark:text-dark-text w-full"
               value={currentSettings.contrast}
               onChange={(e) => updateSetting('contrast', parseInt(e.target.value) || 0)}
             />
           </div>
 
           <div className="flex flex-col space-y-1 flex-1 min-w-[80px]">
-            <span className="text-[10px] text-[#605e5c]">Blank Pg</span>
+            <span className="text-[10px] text-[#605e5c] dark:text-dark-text">Blank Pg</span>
             <select
-              className="text-[11px] py-0.5 px-1 bg-white border-[#edebe9] rounded focus:ring-1 focus:ring-[#106EBE] w-full"
+              className="text-[11px] py-0.5 px-1 bg-white dark:bg-dark-bg border-[#edebe9] dark:border-dark-border rounded focus:ring-1 focus:ring-[#106EBE] dark:focus:ring-blue-500 text-[#605e5c] dark:text-dark-text w-full"
               value={currentSettings.blankPage}
               onChange={(e) => updateSetting('blankPage', e.target.value)}
             >
@@ -334,17 +334,17 @@ function ScanRibbon() {
           </div>
 
           <div className="flex flex-col space-y-1 flex-1 min-w-[80px]">
-            <span className="text-[10px] text-[#605e5c]">Sensibility</span>
+            <span className="text-[10px] text-[#605e5c] dark:text-dark-text">Sensibility</span>
             <input
               type="text"
-              className="text-[11px] py-0.5 px-1 bg-white border-[#edebe9] rounded focus:ring-1 focus:ring-[#106EBE] w-full"
+              className="text-[11px] py-0.5 px-1 bg-white dark:bg-dark-bg border-[#edebe9] dark:border-dark-border rounded focus:ring-1 focus:ring-[#106EBE] dark:focus:ring-blue-500 text-[#605e5c] dark:text-dark-text w-full"
               value={currentSettings.sensibility || ''}
               onChange={(e) => updateSetting('sensibility', e.target.value)}
               placeholder="Auto"
             />
           </div>
         </div>
-        <span className="text-[10px] text-gray-400 mt-auto py-0.5">Settings</span>
+        <span className="text-[10px] text-gray-400 dark:text-dark-textTertiary mt-auto py-0.5">Settings</span>
       </div>
 
       {/* Scan Actions Group */}
@@ -353,7 +353,7 @@ function ScanRibbon() {
           <button
             onClick={handleScan}
             disabled={!selectedScanner || scanMutation.isPending}
-            className={`bg-[#106EBE] hover:bg-[#005a9e] text-white px-6 py-3 rounded shadow-lg flex items-center space-x-2 transition-all ${
+            className={`bg-[#106EBE] dark:bg-blue-600 hover:bg-[#005a9e] dark:hover:bg-blue-700 text-white px-6 py-3 rounded shadow-lg flex items-center space-x-2 transition-all ${
               scanMutation.isPending ? 'opacity-75 cursor-wait' : ''
             } ${!selectedScanner ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
@@ -364,16 +364,16 @@ function ScanRibbon() {
               {scanMutation.isPending ? 'NUMÉRISATION...' : 'SCAN'}
             </span>
           </button>
-          <button className="flex flex-col items-center justify-center p-1.5 rounded hover:bg-[#e1dfdd] transition-colors min-w-[56px]">
+          <button className="flex flex-col items-center justify-center p-1.5 rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover transition-colors min-w-[56px]">
             <span className="material-symbols-outlined text-[24px]">preview</span>
             <span className="text-[11px] mt-1">Preview</span>
           </button>
-          <button className="flex flex-col items-center justify-center p-1.5 rounded hover:bg-[#e1dfdd] transition-colors min-w-[56px]">
+          <button className="flex flex-col items-center justify-center p-1.5 rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover transition-colors min-w-[56px]">
             <span className="material-symbols-outlined text-[24px]">settings</span>
             <span className="text-[11px] mt-1">Settings</span>
           </button>
         </div>
-        <span className="text-[10px] text-gray-400 mt-auto py-0.5">Actions</span>
+        <span className="text-[10px] text-gray-400 dark:text-dark-textTertiary mt-auto py-0.5">Actions</span>
       </div>
     </div>
   )

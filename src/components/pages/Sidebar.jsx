@@ -1,37 +1,96 @@
 import { useDocuments } from '../../contexts/DocumentsContext'
 import FileDropZone from '../ui/FileDropZone'
-import PageThumbnail from '../ui/PageThumbnail'
+import DraggablePageThumbnail from '../ui/DraggablePageThumbnail'
+import MobileSidebar from '../ui/MobileSidebar'
+import { useSidebar } from '../ui/Layout'
+import { useMobile } from '../../hooks/useMediaQuery'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { useState, useEffect } from 'react'
 
 function Sidebar() {
   const {
     documents,
-    selectedDocument,
-    selectedDocumentId,
-    selectedPageNumber,
-    setSelectedDocumentId,
-    setSelectedPageNumber,
-    addDocuments
+    allPages,
+    selectedPageId,
+    addDocuments,
+    selectPageById
   } = useDocuments()
+
+  const { isSidebarOpen, closeSidebar } = useSidebar()
+  const isMobile = useMobile()
+
+  // État local pour l'ordre des pages (pour le drag and drop)
+  const [pagesOrder, setPagesOrder] = useState([])
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files)
     addDocuments(files)
   }
 
-  const numPages = selectedDocument?.numPages || 1
-  const isPdf = selectedDocument?.type === 'application/pdf'
+  // Mettre à jour l'ordre local quand les données changent
+  useEffect(() => {
+    const order = allPages.map(page => page.id)
+    setPagesOrder(order)
+  }, [documents])
 
-  return (
-    <aside className="w-64 border-r border-[#edebe9] bg-white flex flex-col shrink-0">
-      {/* Document Selector */}
-      <div className="p-3 border-b border-[#edebe9] bg-[#faf9f8]">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#605e5c] flex items-center">
+  // Capteurs pour le drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px de mouvement avant d'activer le drag
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event
+
+    if (active.id !== over.id) {
+      const oldIndex = pagesOrder.indexOf(active.id)
+      const newIndex = pagesOrder.indexOf(over.id)
+
+      // Mettre à jour l'ordre local (visuel uniquement pour l'instant)
+      setPagesOrder(arrayMove(pagesOrder, oldIndex, newIndex))
+
+      // TODO: Implémenter la réorganisation réelle entre documents
+      console.log('Drag from', oldIndex, 'to', newIndex)
+    }
+  }
+
+  // Utiliser l'ordre local pour afficher les pages
+  const orderedPages = pagesOrder
+    .map(id => allPages.find(page => page.id === id))
+    .filter(Boolean)
+
+  const totalPages = allPages.length
+
+  const sidebarContent = (
+    <aside className="w-48 md:w-52 h-full border-r border-[#edebe9] dark:border-dark-border bg-white dark:bg-dark-bg flex flex-col shrink-0 transition-colors duration-200">
+      {/* Header avec bouton d'ajout */}
+      <div className="p-3 border-b border-[#edebe9] dark:border-dark-border bg-[#faf9f8] dark:bg-dark-bgSecondary">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#605e5c] dark:text-dark-text flex items-center">
             <span className="material-symbols-outlined text-[16px] mr-2">folder_open</span>
-            Documents ({documents.length})
+            Pages
           </h2>
-          <label className="cursor-pointer hover:bg-[#e1dfdd] p-1 rounded transition-colors" title="Add document">
-            <span className="material-symbols-outlined text-[18px] text-[#106EBE]">add</span>
+          <label className="cursor-pointer hover:bg-[#e1dfdd] dark:hover:bg-dark-hover p-1 rounded transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center" title="Add document">
+            <span className="material-symbols-outlined text-[18px] text-[#106EBE] dark:text-blue-400">add</span>
             <input
               type="file"
               className="hidden"
@@ -41,102 +100,79 @@ function Sidebar() {
             />
           </label>
         </div>
-
-        {documents.length > 0 && (
-          <select
-            className="w-full text-[11px] py-1.5 px-2 bg-white border border-[#edebe9] rounded focus:ring-1 focus:ring-[#106EBE]"
-            value={selectedDocumentId || ''}
-            onChange={(e) => {
-              setSelectedDocumentId(Number(e.target.value))
-              setSelectedPageNumber(1)
-            }}
-          >
-            <option value="" disabled>Select a document</option>
-            {documents.map((doc) => (
-              <option key={doc.id} value={doc.id}>
-                {doc.name}
-              </option>
-            ))}
-          </select>
+        {totalPages > 0 && (
+          <p className="text-[10px] text-[#605e5c] dark:text-dark-textTertiary mt-2">
+            {totalPages} {totalPages === 1 ? 'page' : 'pages'} • {documents.length} {documents.length === 1 ? 'document' : 'documents'}
+          </p>
         )}
       </div>
 
       {/* Pages List */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
-        {!selectedDocument ? (
-          <FileDropZone
-            onDrop={addDocuments}
-            className="cursor-pointer group"
-          >
-            <div className="border-2 border-dashed border-[#c8c6c4] rounded-lg p-8 text-center hover:border-[#106EBE] hover:bg-[#f3f2f1] transition-all">
-              <span className="material-symbols-outlined text-[c8c6c4] text-4xl mb-2 group-hover:text-[#106EBE] transition-colors">cloud_upload</span>
-              <p className="text-[10px] font-medium text-[#c8c6c4] group-hover:text-[#106EBE] transition-colors">DROP FILES HERE</p>
-              <p className="text-[9px] text-[#c8c6c4] mt-2">or click to browse</p>
-            </div>
-          </FileDropZone>
+      <div className="flex-1 flex flex-col min-h-0">
+        {totalPages === 0 ? (
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
+            <FileDropZone
+              onDrop={addDocuments}
+              className="cursor-pointer group"
+            >
+              <div className="border-2 border-dashed border-[#c8c6c4] dark:border-dark-borderLight rounded-lg p-8 text-center hover:border-[#106EBE] hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-all">
+                <span className="material-symbols-outlined text-[#c8c6c4] dark:text-dark-textTertiary text-4xl mb-2 group-hover:text-[#106EBE] dark:group-hover:text-blue-400 transition-colors">cloud_upload</span>
+                <p className="text-[10px] font-medium text-[#c8c6c4] dark:text-dark-textTertiary group-hover:text-[#106EBE] dark:group-hover:text-blue-400 transition-colors">DROP FILES HERE</p>
+                <p className="text-[9px] text-[#c8c6c4] dark:text-dark-textTertiary mt-2">or click to browse</p>
+              </div>
+            </FileDropZone>
+          </div>
         ) : (
-          <>
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#605e5c] flex items-center">
-                <span className="material-symbols-outlined text-[14px] mr-1">view_list</span>
-                Pages
-              </h3>
-              <span className="text-[10px] text-[#605e5c] bg-[#f3f2f1] px-2 py-0.5 rounded-full">
-                {numPages} {numPages === 1 ? 'page' : 'pages'}
-              </span>
-            </div>
+          /* Liste des pages avec Drag and Drop */
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={pagesOrder}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-1 px-3 py-3">
+                  {orderedPages.map((page) => {
+                    const isPdfPage = page.url && !page.url.includes('.')
 
-            <div className="space-y-3">
-              {selectedDocument.pages ? (
-                // Document scanné avec des pages multiples (toujours des images)
-                selectedDocument.pages.map((page) => (
-                  <div
-                    key={page.pageNumber}
-                    className="space-y-1"
-                  >
-                    <PageThumbnail
-                      url={page.url}
-                      pageNumber={page.pageNumber}
-                      isSelected={selectedPageNumber === page.pageNumber}
-                      onClick={() => setSelectedPageNumber(page.pageNumber)}
-                      isPdf={false}
-                    />
-                  </div>
-                ))
-              ) : (
-                // Document classique (PDF ou image)
-                Array.from({ length: numPages }, (_, i) => i + 1).map((pageNum) => (
-                  <div
-                    key={pageNum}
-                    className="space-y-1"
-                  >
-                    <PageThumbnail
-                      url={selectedDocument.url}
-                      pageNumber={pageNum}
-                      isSelected={selectedPageNumber === pageNum}
-                      onClick={() => setSelectedPageNumber(pageNum)}
-                      isPdf={isPdf}
-                    />
-                  </div>
-                ))
-              )}
-            </div>
-          </>
+                    return (
+                      <div key={page.id} className="relative">
+                        <DraggablePageThumbnail
+                          id={page.id}
+                          url={page.url}
+                          pageNumber={page.pageNumber}
+                          isSelected={selectedPageId === page.id}
+                          onClick={() => {
+                            selectPageById(page.id)
+                            if (isMobile) closeSidebar()
+                          }}
+                          isPdf={isPdfPage}
+                          disabled={isMobile}
+                        />
+                        {/* Nom du document en petit */}
+                        <p className="text-[9px] text-[#605e5c] dark:text-dark-textTertiary truncate mt-1 px-1" title={page.documentName}>
+                          {page.documentName}
+                        </p>
+                      </div>
+                    )
+                  })}
+                </div>
+              </SortableContext>
+            </DndContext>
+          </div>
         )}
       </div>
-
-      {/* Page Info Footer */}
-      {selectedDocument && (
-        <div className="p-3 bg-[#faf9f8] border-t border-[#edebe9]">
-          <div className="flex items-center justify-between text-[11px]">
-            <span className="text-[#605e5c]">Current Page</span>
-            <span className="font-bold text-[#106EBE]">
-              {selectedPageNumber} / {numPages}
-            </span>
-          </div>
-        </div>
-      )}
     </aside>
+  )
+
+  // Utiliser MobileSidebar wrapper pour la gestion mobile/desktop
+  return (
+    <MobileSidebar isOpen={isSidebarOpen} onClose={closeSidebar}>
+      {sidebarContent}
+    </MobileSidebar>
   )
 }
 

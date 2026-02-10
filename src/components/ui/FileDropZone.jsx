@@ -32,7 +32,7 @@ function FileDropZone({ onDrop, children, className = '' }) {
 
   return (
     <div
-      className={`transition-all ${isDragging ? 'ring-4 ring-[#106EBE] bg-blue-50' : ''} ${className}`}
+      className={`transition-all ${isDragging ? 'ring-4 ring-[#106EBE] dark:ring-blue-400 bg-blue-50 dark:bg-blue-900/30' : ''} ${className}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}

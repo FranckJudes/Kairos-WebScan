@@ -4,7 +4,7 @@ function Footer() {
   const { documents, selectedDocument } = useDocuments()
 
   return (
-    <footer className="h-6 bg-[#106EBE] flex items-center px-3 justify-between text-[10px] text-white font-medium shrink-0">
+    <footer className="h-6 bg-[#106EBE] dark:bg-[#0d4a8e] flex items-center px-3 justify-between text-[10px] text-white font-medium shrink-0 transition-colors duration-200">
       <div className="flex items-center space-x-4">
         <span className="flex items-center">
           <span className="w-2 h-2 bg-green-400 rounded-full mr-2 shadow-sm"></span>

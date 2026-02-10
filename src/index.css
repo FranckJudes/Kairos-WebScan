@@ -30,6 +30,30 @@ body {
     border-radius: 10px;
 }
 
+/* Scrollbar plus fine sur mobile pour le touch scroll */
+@media (max-width: 767px) {
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+    }
+}
+
+/* Scrollbar horizontal fine pour overflow-x-auto */
+.scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #c8c6c4;
+    border-radius: 10px;
+}
+.scrollbar-thin:hover::-webkit-scrollbar-thumb {
+    background: #a19f9d;
+}
+
 .document-view {
     box-shadow: 0 0 15px rgba(0,0,0,0.08), 0 0 4px rgba(0,0,0,0.04);
 }

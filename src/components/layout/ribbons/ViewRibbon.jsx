@@ -35,17 +35,17 @@ function ViewRibbon() {
   }
 
   return (
-    <div className="h-24 bg-[#f3f2f1] border-b border-[#edebe9] flex items-stretch py-1.5 px-2 overflow-x-auto custom-scrollbar shrink-0">
+    <div className="h-24 bg-[#f3f2f1] dark:bg-dark-bg border-b border-[#edebe9] dark:border-dark-border flex items-stretch py-1.5 px-2 overflow-x-auto custom-scrollbar shrink-0 transition-colors duration-200">
       {/* Zoom Group */}
-      <div className="flex flex-col items-center px-3 border-r border-[#edebe9] h-full min-w-[220px]">
+      <div className="flex flex-col items-center px-3 border-r border-[#edebe9] dark:border-dark-border h-full min-w-[220px]">
         <div className="flex flex-1 items-center space-x-2 px-2 w-full">
-          <button className="p-2 rounded hover:bg-[#e1dfdd] transition-colors" onClick={() => setZoomLevel(prev => Math.max(25, parseInt(prev) - 25) + '%')}>
+          <button className="p-2 rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover transition-colors" onClick={() => setZoomLevel(prev => Math.max(25, parseInt(prev) - 25) + '%')}>
             <span className="material-symbols-outlined text-[24px]">zoom_out</span>
           </button>
           <div className="flex flex-col items-center flex-1">
-            <span className="text-[10px] text-[#605e5c] uppercase font-bold tracking-tight">Zoom</span>
+            <span className="text-[10px] text-[#605e5c] dark:text-dark-text uppercase font-bold tracking-tight">Zoom</span>
             <select
-              className="text-[11px] py-0.5 px-2 bg-white border-[#edebe9] rounded focus:ring-1 focus:ring-[#106EBE] w-full"
+              className="text-[11px] py-0.5 px-2 bg-white dark:bg-dark-bg border-[#edebe9] dark:border-dark-border rounded focus:ring-1 focus:ring-[#106EBE] dark:focus:ring-blue-500 text-[#605e5c] dark:text-dark-text w-full"
               value={zoomLevel}
               onChange={(e) => setZoomLevel(e.target.value)}
             >
@@ -60,24 +60,24 @@ function ViewRibbon() {
               <option>Fit Page</option>
             </select>
           </div>
-          <button className="p-2 rounded hover:bg-[#e1dfdd] transition-colors" onClick={() => setZoomLevel(prev => Math.min(400, parseInt(prev) + 25) + '%')}>
+          <button className="p-2 rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover transition-colors" onClick={() => setZoomLevel(prev => Math.min(400, parseInt(prev) + 25) + '%')}>
             <span className="material-symbols-outlined text-[24px]">zoom_in</span>
           </button>
         </div>
-        <span className="text-[10px] text-gray-400 mt-auto py-0.5">Zoom</span>
+        <span className="text-[10px] text-gray-400 dark:text-dark-textTertiary mt-auto py-0.5">Zoom</span>
       </div>
 
       {/* View Mode Group */}
-      <div className="flex flex-col items-center px-3 border-r border-[#edebe9] h-full min-w-[200px]">
+      <div className="flex flex-col items-center px-3 border-r border-[#edebe9] dark:border-dark-border h-full min-w-[200px]">
         <div className="flex flex-1 items-center space-x-4 px-2 w-full">
           <div className="flex flex-col space-y-1 flex-1">
-            <span className="text-[10px] text-[#605e5c] uppercase font-bold tracking-tight">View Mode</span>
-            <div className="flex bg-white rounded border border-[#edebe9] p-0.5">
+            <span className="text-[10px] text-[#605e5c] dark:text-dark-text uppercase font-bold tracking-tight">View Mode</span>
+            <div className="flex bg-white dark:bg-dark-bg rounded border border-[#edebe9] dark:border-dark-border p-0.5">
               <button
                 className={`flex-1 px-2 py-0.5 text-[10px] rounded-sm font-medium flex items-center justify-center ${
                   viewMode === 'Single Page'
-                    ? 'bg-[#106EBE] text-white'
-                    : 'text-[#605e5c] hover:bg-[#e1dfdd]'
+                    ? 'bg-[#106EBE] dark:bg-blue-600 text-white'
+                    : 'text-[#605e5c] dark:text-dark-text hover:bg-[#e1dfdd] dark:hover:bg-dark-hover'
                 }`}
                 onClick={() => setViewMode('Single Page')}
               >
@@ -87,8 +87,8 @@ function ViewRibbon() {
               <button
                 className={`flex-1 px-2 py-0.5 text-[10px] rounded-sm font-medium flex items-center justify-center ${
                   viewMode === 'Facing'
-                    ? 'bg-[#106EBE] text-white'
-                    : 'text-[#605e5c] hover:bg-[#e1dfdd]'
+                    ? 'bg-[#106EBE] dark:bg-blue-600 text-white'
+                    : 'text-[#605e5c] dark:text-dark-text hover:bg-[#e1dfdd] dark:hover:bg-dark-hover'
                 }`}
                 onClick={() => setViewMode('Facing')}
               >
@@ -98,8 +98,8 @@ function ViewRibbon() {
               <button
                 className={`flex-1 px-2 py-0.5 text-[10px] rounded-sm font-medium flex items-center justify-center ${
                   viewMode === 'Continuous'
-                    ? 'bg-[#106EBE] text-white'
-                    : 'text-[#605e5c] hover:bg-[#e1dfdd]'
+                    ? 'bg-[#106EBE] dark:bg-blue-600 text-white'
+                    : 'text-[#605e5c] dark:text-dark-text hover:bg-[#e1dfdd] dark:hover:bg-dark-hover'
                 }`}
                 onClick={() => setViewMode('Continuous')}
               >
@@ -109,29 +109,29 @@ function ViewRibbon() {
             </div>
           </div>
         </div>
-        <span className="text-[10px] text-gray-400 mt-auto py-0.5">Layout</span>
+        <span className="text-[10px] text-gray-400 dark:text-dark-textTertiary mt-auto py-0.5">Layout</span>
       </div>
 
       {/* Rotation Group */}
-      <div className="flex flex-col items-center px-3 border-r border-[#edebe9] h-full min-w-[180px]">
+      <div className="flex flex-col items-center px-3 border-r border-[#edebe9] dark:border-dark-border h-full min-w-[180px]">
         <div className="flex flex-1 items-center space-x-4 px-2 w-full">
           <div className="flex flex-col space-y-1 flex-1">
-            <span className="text-[10px] text-[#605e5c] uppercase font-bold tracking-tight">Rotation: {rotation}°</span>
+            <span className="text-[10px] text-[#605e5c] dark:text-dark-text uppercase font-bold tracking-tight">Rotation: {rotation}°</span>
             <div className="flex space-x-1">
               <button
-                className="flex-1 px-3 py-1 bg-white border border-[#edebe9] rounded hover:bg-[#e1dfdd] transition-colors text-[10px] font-medium"
+                className="flex-1 px-3 py-1 bg-white dark:bg-dark-bg border border-[#edebe9] dark:border-dark-border rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover transition-colors text-[10px] font-medium text-[#605e5c] dark:text-dark-text"
                 onClick={() => setRotation(prev => (prev - 90 + 360) % 360)}
               >
                 -90°
               </button>
               <button
-                className="flex-1 px-3 py-1 bg-white border border-[#edebe9] rounded hover:bg-[#e1dfdd] transition-colors text-[10px] font-medium"
+                className="flex-1 px-3 py-1 bg-white dark:bg-dark-bg border border-[#edebe9] dark:border-dark-border rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover transition-colors text-[10px] font-medium text-[#605e5c] dark:text-dark-text"
                 onClick={() => setRotation(prev => (prev + 90) % 360)}
               >
                 +90°
               </button>
               <button
-                className="flex-1 px-3 py-1 bg-white border border-[#edebe9] rounded hover:bg-[#e1dfdd] transition-colors text-[10px] font-medium"
+                className="flex-1 px-3 py-1 bg-white dark:bg-dark-bg border border-[#edebe9] dark:border-dark-border rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover transition-colors text-[10px] font-medium text-[#605e5c] dark:text-dark-text"
                 onClick={() => setRotation(0)}
               >
                 0°
@@ -139,33 +139,33 @@ function ViewRibbon() {
             </div>
           </div>
         </div>
-        <span className="text-[10px] text-gray-400 mt-auto py-0.5">Rotate</span>
+        <span className="text-[10px] text-gray-400 dark:text-dark-textTertiary mt-auto py-0.5">Rotate</span>
       </div>
 
       {/* Display Options Group */}
-      <div className="flex flex-col items-center px-3 border-r border-[#edebe9] h-full min-w-[200px]">
+      <div className="flex flex-col items-center px-3 border-r border-[#edebe9] dark:border-dark-border h-full min-w-[200px]">
         <div className="flex flex-1 items-center space-x-2 px-2 w-full">
-          <button className="flex flex-col items-center justify-center p-1.5 rounded hover:bg-[#e1dfdd] transition-colors min-w-[56px]">
+          <button className="flex flex-col items-center justify-center p-1.5 rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover transition-colors min-w-[56px]">
             <span className="material-symbols-outlined text-[24px]">invert_colors</span>
             <span className="text-[11px] mt-1">Invert</span>
           </button>
-          <button className="flex flex-col items-center justify-center p-1.5 rounded hover:bg-[#e1dfdd] transition-colors min-w-[56px]">
+          <button className="flex flex-col items-center justify-center p-1.5 rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover transition-colors min-w-[56px]">
             <span className="material-symbols-outlined text-[24px]">contrast</span>
             <span className="text-[11px] mt-1">Contrast</span>
           </button>
-          <button className="flex flex-col items-center justify-center p-1.5 rounded hover:bg-[#e1dfdd] transition-colors min-w-[56px]">
+          <button className="flex flex-col items-center justify-center p-1.5 rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover transition-colors min-w-[56px]">
             <span className="material-symbols-outlined text-[24px]">brightness_6</span>
             <span className="text-[11px] mt-1">Bright</span>
           </button>
         </div>
-        <span className="text-[10px] text-gray-400 mt-auto py-0.5">Display</span>
+        <span className="text-[10px] text-gray-400 dark:text-dark-textTertiary mt-auto py-0.5">Display</span>
       </div>
 
       {/* Navigation Group */}
       <div className="flex flex-col items-center px-3 h-full">
         <div className="flex space-x-1 flex-1 items-center">
           <button
-            className="flex flex-col items-center justify-center p-1.5 rounded hover:bg-[#e1dfdd] transition-colors min-w-[56px] disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex flex-col items-center justify-center p-1.5 rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover transition-colors min-w-[56px] disabled:opacity-40 disabled:cursor-not-allowed"
             onClick={goToFirst}
             disabled={totalDocs === 0 || currentIndex === 0}
           >
@@ -173,7 +173,7 @@ function ViewRibbon() {
             <span className="text-[11px] mt-1">First</span>
           </button>
           <button
-            className="flex flex-col items-center justify-center p-1.5 rounded hover:bg-[#e1dfdd] transition-colors min-w-[56px] disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex flex-col items-center justify-center p-1.5 rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover transition-colors min-w-[56px] disabled:opacity-40 disabled:cursor-not-allowed"
             onClick={goToPrevious}
             disabled={totalDocs === 0 || currentIndex === 0}
           >
@@ -181,13 +181,13 @@ function ViewRibbon() {
             <span className="text-[11px] mt-1">Prev</span>
           </button>
           <div className="flex flex-col items-center justify-center px-2 min-w-[80px]">
-            <span className="text-[12px] font-medium text-[#605e5c]">Document</span>
-            <span className="text-[14px] font-bold text-[#106EBE]">
+            <span className="text-[12px] font-medium text-[#605e5c] dark:text-dark-text">Document</span>
+            <span className="text-[14px] font-bold text-[#106EBE] dark:text-blue-400">
               {totalDocs === 0 ? '0 / 0' : `${currentIndex + 1} / ${totalDocs}`}
             </span>
           </div>
           <button
-            className="flex flex-col items-center justify-center p-1.5 rounded hover:bg-[#e1dfdd] transition-colors min-w-[56px] disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex flex-col items-center justify-center p-1.5 rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover transition-colors min-w-[56px] disabled:opacity-40 disabled:cursor-not-allowed"
             onClick={goToNext}
             disabled={totalDocs === 0 || currentIndex === totalDocs - 1}
           >
@@ -195,7 +195,7 @@ function ViewRibbon() {
             <span className="text-[11px] mt-1">Next</span>
           </button>
           <button
-            className="flex flex-col items-center justify-center p-1.5 rounded hover:bg-[#e1dfdd] transition-colors min-w-[56px] disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex flex-col items-center justify-center p-1.5 rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover transition-colors min-w-[56px] disabled:opacity-40 disabled:cursor-not-allowed"
             onClick={goToLast}
             disabled={totalDocs === 0 || currentIndex === totalDocs - 1}
           >
@@ -203,7 +203,7 @@ function ViewRibbon() {
             <span className="text-[11px] mt-1">Last</span>
           </button>
         </div>
-        <span className="text-[10px] text-gray-400 mt-auto py-0.5">Navigate</span>
+        <span className="text-[10px] text-gray-400 dark:text-dark-textTertiary mt-auto py-0.5">Navigate</span>
       </div>
     </div>
   )

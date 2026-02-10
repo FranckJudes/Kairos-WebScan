@@ -1,0 +1,49 @@
+/* jstree-table custom styles */
+.jstree-jstree-table {
+  overflow: auto;
+}
+
+/* Table headers */
+.jstree-table-header {
+  background-color: #f3f2f1;
+  border-bottom: 2px solid #edebe9;
+  font-weight: 600;
+  color: #605e5c;
+}
+
+.jstree-table-header-cell {
+  padding: 8px;
+  border-right: 1px solid #edebe9;
+}
+
+/* Table cells */
+.jstree-table-cell {
+  padding: 6px 8px;
+  border-bottom: 1px solid #f3f2f1;
+}
+
+/* Row hover */
+.jstree-table-row:hover {
+  background-color: #f3f2f1;
+}
+
+/* Selected row */
+.jstree-table-row.jstree-selected {
+  background-color: #e7f3ff;
+}
+
+/* Icon styles */
+.jstree-table-icon {
+  margin-right: 6px;
+}
+
+/* Text align helpers */
+.text-center {
+  text-align: center;
+}
+.text-right {
+  text-align: right;
+}
+.text-xs {
+  font-size: 11px;
+}

@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useRef, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useDocuments } from '../../contexts/DocumentsContext'
+import { Document, Page, pdfjs } from 'react-pdf'
 import {
   DndContext,
   closestCenter,
@@ -17,18 +17,96 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import TypologyTree from '../ui/TypologyTree'
+import { useMobile } from '../../hooks/useMediaQuery'
+import { useVirtualizer } from '@tanstack/react-virtual'
+import { useOrganizePages } from '../../hooks/useOrganizePages'
+import { useClassifiedPages } from '../../hooks/useClassifiedPages'
+
+// Configuration de PDF.js
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
+
+// Composant Modal pour visualiser une page en grand
+function PageModal({ page, onClose }) {
+  const [scale, setScale] = useState(1)
+  const isMobile = useMobile()
+
+  const zoomIn = () => setScale((prev) => Math.min(prev + 0.25, 3))
+  const zoomOut = () => setScale((prev) => Math.max(prev - 0.25, 0.5))
+  const resetZoom = () => setScale(1)
+
+  const isPdf = page.type === 'application/pdf' && !page.url.includes('/api/WiaScanner/image')
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-2 md:p-4"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-[95vw] md:max-w-[90vw] max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="bg-white dark:bg-dark-bgSecondary rounded-t-lg p-2 md:p-3 flex flex-col md:flex-row md:items-center justify-between shadow-lg gap-2 transition-colors duration-200">
+          <div className="flex items-center space-x-2 md:space-x-3 min-w-0">
+            <h3 className="text-xs md:text-sm font-semibold text-[#605e5c] dark:text-dark-text truncate">{page.documentName}</h3>
+            <span className="text-[9px] md:text-[10px] text-[#c8c6c4] dark:text-dark-textTertiary bg-[#f3f2f1] dark:bg-dark-bgTertiary px-2 py-0.5 rounded-full whitespace-nowrap">
+              Pg {page.pageNumber}
+            </span>
+          </div>
+          <div className="flex items-center justify-between md:justify-end gap-1 md:gap-2 overflow-x-auto">
+            {isPdf && (
+              <>
+                <button onClick={zoomOut} disabled={scale <= 0.5} className="p-1.5 md:p-1 rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover disabled:opacity-40 disabled:cursor-not-allowed min-w-[44px] min-h-[44px] flex items-center justify-center" title="Zoom arrière">
+                  <span className="material-symbols-outlined text-[20px] md:text-[18px]">zoom_out</span>
+                </button>
+                <span className="text-[10px] text-[#605e5c] dark:text-dark-text min-w-[40px] md:min-w-[45px] text-center">{Math.round(scale * 100)}%</span>
+                <button onClick={zoomIn} disabled={scale >= 3} className="p-1.5 md:p-1 rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover disabled:opacity-40 disabled:cursor-not-allowed min-w-[44px] min-h-[44px] flex items-center justify-center" title="Zoom avant">
+                  <span className="material-symbols-outlined text-[20px] md:text-[18px]">zoom_in</span>
+                </button>
+                <button onClick={resetZoom} className="px-2 md:px-2 py-1 md:py-0.5 text-[10px] bg-white dark:bg-dark-bg border border-[#edebe9] dark:border-dark-border rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover min-w-[44px] min-h-[44px] flex items-center justify-center">
+                  Reset
+                </button>
+              </>
+            )}
+            <button onClick={onClose} className="ml-0 md:ml-2 p-1.5 md:p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 min-w-[44px] min-h-[44px] flex items-center justify-center" title="Fermer">
+              <span className="material-symbols-outlined text-[20px] md:text-[18px]">close</span>
+            </button>
+          </div>
+        </div>
+        <div className="bg-gray-100 dark:bg-dark-bg rounded-b-lg p-2 md:p-4 overflow-auto flex items-center justify-center" style={{ maxHeight: 'calc(90vh - 70px)' }}>
+          {isPdf ? (
+            <Document file={page.url} loading={<div className="flex items-center justify-center"><span className="material-symbols-outlined text-4xl text-gray-400 dark:text-dark-textTertiary animate-spin">progress_activity</span></div>}>
+              <Page pageNumber={page.pageNumber} scale={scale} renderTextLayer={false} renderAnnotationLayer={false} />
+            </Document>
+          ) : (
+            <img src={page.url} alt={`${page.documentName} - Page ${page.pageNumber}`} className="max-w-full max-h-full object-contain" style={{ transform: `scale(${scale})`, transformOrigin: 'center' }} />
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Composant pour afficher la miniature d'une page PDF
+function PDFThumbnail({ url, pageNumber }) {
+  const [numPages, setNumPages] = useState(null)
+
+  const onLoadSuccess = ({ numPages }) => {
+    setNumPages(numPages)
+  }
+
+  return (
+    <div className="w-full h-full flex items-center justify-center bg-[#f3f2f1]">
+      <Document file={url} onLoadSuccess={onLoadSuccess} loading={<div className="w-full h-full flex items-center justify-center"><span className="material-symbols-outlined text-2xl text-gray-400 animate-spin">progress_activity</span></div>}>
+        <Page pageNumber={pageNumber} width={150} renderTextLayer={false} renderAnnotationLayer={false} className="flex items-center justify-center" />
+      </Document>
+    </div>
+  )
+}
 
 // Composant SortablePage pour une page avec drag & drop
-function SortablePage({ page, index, removePage, rotatePage }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: page.id })
-
+function SortablePage({ page, index, removePage, rotatePage, onClick, isSelected, onToggleSelect }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: page.id })
   const [rotation, setRotation] = useState(0)
 
   const handleRotate = () => {
@@ -37,261 +115,359 @@ function SortablePage({ page, index, removePage, rotatePage }) {
     rotatePage(page.id, newRotation)
   }
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  }
+  const style = { transform: CSS.Transform.toString(transform), transition }
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={`relative bg-white rounded-lg shadow-sm border-2 transition-all cursor-move group ${
-        isDragging ? 'border-[#106EBE] opacity-50 scale-95 z-50' : 'border-[#edebe9] hover:border-[#106EBE] hover:shadow-md'
-      }`}
-    >
-      {/* Numéro d'ordre */}
-      <div className="absolute top-2 left-2 bg-[#106EBE] text-white w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold shadow-md z-10 pointer-events-none">
+    <div ref={setNodeRef} style={style} className={`relative bg-white dark:bg-dark-bgSecondary rounded-lg shadow-sm border-2 transition-all group ${isDragging ? 'border-[#106EBE] dark:border-blue-400 opacity-50 scale-95 z-50' : isSelected ? 'border-[#106EBE] dark:border-blue-400 ring-2 ring-[#106EBE]/20 dark:ring-blue-400/20' : 'border-[#edebe9] dark:border-dark-border hover:border-[#106EBE] dark:hover:border-blue-400 hover:shadow-md'}`}>
+      <div className="absolute top-2 left-2 z-20 pointer-events-auto">
+        <input type="checkbox" checked={isSelected} onChange={() => onToggleSelect(page.id)} className="w-5 h-5 rounded border-2 border-[#c8c6c4] dark:border-dark-borderLight text-[#106EBE] dark:text-blue-500 focus:ring-[#106EBE] dark:focus:ring-blue-500 focus:ring-2 cursor-pointer" />
+      </div>
+      <div className={`absolute top-2 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md z-10 pointer-events-none ${isSelected ? 'bg-[#106EBE] dark:bg-blue-500 w-7 h-7 left-9' : 'bg-black/50 dark:bg-white/30 px-1.5 left-10'}`}>
         {index + 1}
       </div>
-
-      {/* Actions */}
       <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
-        <button
-          onClick={handleRotate}
-          className="bg-[#f3f2f1] hover:bg-[#106EBE] hover:text-white text-[#605e5c] p-1.5 rounded shadow-sm transition-colors"
-          title="Rotation 90°"
-        >
+        <button onClick={handleRotate} className="bg-[#f3f2f1] dark:bg-dark-bgTertiary hover:bg-[#106EBE] dark:hover:bg-blue-500 hover:text-white text-[#605e5c] dark:text-dark-text p-1.5 rounded shadow-sm transition-colors" title="Rotation 90°">
           <span className="material-symbols-outlined text-[14px]">rotate_right</span>
         </button>
-        <button
-          onClick={() => removePage(page.id)}
-          className="bg-red-100 hover:bg-red-500 text-red-600 hover:text-white p-1.5 rounded shadow-sm transition-colors"
-          title="Supprimer"
-        >
+        <button onClick={() => removePage(page.id)} className="bg-red-100 dark:bg-red-900/30 hover:bg-red-500 dark:hover:bg-red-600 text-red-600 dark:text-red-400 hover:text-white p-1.5 rounded shadow-sm transition-colors" title="Supprimer">
           <span className="material-symbols-outlined text-[14px]">delete</span>
         </button>
       </div>
-
-      {/* Card Content */}
       <div className="p-3">
-        {/* Thumbnail */}
-        <div className="aspect-[3/4] bg-[#f3f2f1] rounded-lg mb-2 overflow-hidden relative pointer-events-none">
-          <img
-            src={page.url}
-            alt={page.documentName}
-            className="w-full h-full object-cover transition-transform duration-300"
-            style={{ transform: `rotate(${rotation}deg)`, transformOrigin: 'center' }}
-          />
+        <div className="aspect-[3/4] bg-[#f3f2f1] dark:bg-dark-bgTertiary rounded-lg mb-2 overflow-hidden relative cursor-pointer hover:bg-[#e1dfdd] dark:hover:bg-dark-hover transition-colors" onClick={onClick}>
+          {page.type === 'application/pdf' && !page.url.includes('/api/WiaScanner/image') ? (
+            <PDFThumbnail url={page.url} pageNumber={page.pageNumber} />
+          ) : (
+            <img src={page.url} alt={page.documentName} className="w-full h-full object-cover transition-transform duration-300" style={{ transform: `rotate(${rotation}deg)`, transformOrigin: 'center' }} />
+          )}
+          <div className="absolute inset-0 bg-black/0 hover:bg-black/10 dark:hover:bg-white/10 transition-all flex items-center justify-center opacity-0 hover:opacity-100">
+            <span className="material-symbols-outlined text-white dark:text-dark-text text-3xl drop-shadow-lg">zoom_in</span>
+          </div>
         </div>
-
-        {/* Document Info */}
         <div className="space-y-1 pointer-events-none">
-          <h3 className="text-[10px] font-medium text-[#605e5c] truncate" title={page.documentName}>
-            {page.documentName}
-          </h3>
-          <div className="flex items-center justify-between text-[9px] text-[#c8c6c4]">
+          <h3 className="text-[10px] font-medium text-[#605e5c] dark:text-dark-text truncate" title={page.documentName}>{page.documentName}</h3>
+          <div className="flex items-center justify-between text-[9px] text-[#c8c6c4] dark:text-dark-textTertiary">
             <span>Page {page.pageNumber}</span>
             <span>{(page.size / 1024).toFixed(0)} KB</span>
           </div>
         </div>
       </div>
-
-      {/* Drag Handle Indicator */}
-      <div className="absolute top-1/2 -right-1 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-        <span className="material-symbols-outlined text-[#605e5c] text-xl">drag_indicator</span>
+      <div className="absolute top-1/2 -right-1 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-move bg-white dark:bg-dark-bgSecondary rounded-l shadow-md p-1" {...attributes} {...listeners}>
+        <span className="material-symbols-outlined text-[#605e5c] dark:text-dark-text text-xl">drag_indicator</span>
       </div>
     </div>
   )
 }
 
-function OrganizePage() {
-  const navigate = useNavigate()
-  const { documents } = useDocuments()
+// Composant de grille virtualisée
+function GridVirtualizer({ parentRef, orderedPages, columnsCount, removePage, rotatePage, setSelectedPage, selectedPageIds, togglePageSelection }) {
+  const rowVirtualizer = useVirtualizer({
+    count: Math.ceil(orderedPages.length / columnsCount),
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 220,
+    overscan: 3,
+  })
 
-  // Configuration des capteurs pour le drag & drop
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  )
-
-  // Extraire toutes les pages de tous les documents
-  const allPages = useMemo(() => {
-    const pages = []
-    documents.forEach((doc) => {
-      // Document scanné avec des pages séparées (toujours des images)
-      if (doc.pages && doc.pages.length > 0) {
-        doc.pages.forEach((page) => {
-          pages.push({
-            id: `${doc.id}-page-${page.pageNumber}`,
-            documentId: doc.id,
-            documentName: doc.name,
-            pageNumber: page.pageNumber,
-            type: page.type || 'image/png',
-            url: page.url,
-            size: doc.size / doc.pages.length,
-            rotation: 0,
-          })
-        })
-      } else if (doc.type === 'application/pdf') {
-        // Vrai PDF avec plusieurs pages
-        const numPages = doc.numPages || 1
-        for (let i = 1; i <= numPages; i++) {
-          pages.push({
-            id: `${doc.id}-page-${i}`,
-            documentId: doc.id,
-            documentName: doc.name,
-            pageNumber: i,
-            type: doc.type,
-            url: doc.url,
-            size: doc.size / numPages,
-            rotation: 0,
-          })
-        }
-      } else {
-        // Image simple (une seule page)
-        pages.push({
-          id: `${doc.id}-page-1`,
-          documentId: doc.id,
-          documentName: doc.name,
-          pageNumber: 1,
-          type: doc.type,
-          url: doc.url,
-          size: doc.size,
-          rotation: 0,
-        })
-      }
-    })
-    return pages
-  }, [documents])
-
-  const [orderedPages, setOrderedPages] = useState(allPages)
-
-  // Mettre à jour les pages quand les documents changent
-  useEffect(() => {
-    setOrderedPages(allPages)
-  }, [allPages])
-
-  // Gestion de la fin du drag
-  const handleDragEnd = (event) => {
-    const { active, over } = event
-
-    if (over && active.id !== over.id) {
-      setOrderedPages((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id)
-        const newIndex = items.findIndex((item) => item.id === over.id)
-
-        return arrayMove(items, oldIndex, newIndex)
-      })
-    }
-  }
-
-  // Supprimer une page
-  const removePage = (pageId) => {
-    setOrderedPages((prev) => prev.filter((page) => page.id !== pageId))
-  }
-
-  // Rotation d'une page
-  const rotatePage = (pageId, rotation) => {
-    setOrderedPages((prev) =>
-      prev.map((page) =>
-        page.id === pageId ? { ...page, rotation } : page
-      )
-    )
-  }
-
-  // Réinitialiser l'ordre
-  const resetOrder = () => {
-    setOrderedPages(allPages)
-  }
-
-  // Valider l'ordre et exporter
-  const validateOrder = () => {
-    console.log('Ordre validé:', orderedPages)
-    // TODO: Créer un nouveau PDF avec l'ordre des pages
-    alert('Ordre validé ! Fonctionnalité d\'export à venir.')
+  const getRowPages = (rowIndex) => {
+    const start = rowIndex * columnsCount
+    const end = Math.min(start + columnsCount, orderedPages.length)
+    return orderedPages.slice(start, end)
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#f3f2f1]">
-      {/* Header */}
-      <div className="bg-white border-b border-[#edebe9] p-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => navigate(-1)}
-              className="flex items-center space-x-2 text-[#605e5c] hover:text-[#106EBE] transition-colors"
-            >
-              <span className="material-symbols-outlined">arrow_back</span>
-              <span className="font-medium">Retour</span>
-            </button>
-            <div className="h-6 w-px bg-[#edebe9]"></div>
-            <div>
-              <h1 className="text-xl font-bold text-[#605e5c]">Organiser la découpe</h1>
-              <p className="text-sm text-[#605e5c]">Glissez-déposez les pages pour les réorganiser</p>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <span className="text-sm text-[#605e5c]">
-              {orderedPages.length} page{orderedPages.length > 1 ? 's' : ''}
-            </span>
-            <button
-              onClick={resetOrder}
-              className="bg-gray-200 hover:bg-gray-300 text-[#605e5c] px-4 py-2 rounded shadow flex items-center space-x-2 transition-all font-medium"
-              disabled={orderedPages.length === allPages.length}
-            >
-              <span className="material-symbols-outlined">refresh</span>
-              <span>Réinitialiser</span>
-            </button>
-            <button
-              onClick={validateOrder}
-              className="bg-[#106EBE] hover:bg-[#005a9e] text-white px-6 py-2 rounded shadow-lg flex items-center space-x-2 transition-all font-medium"
-            >
-              <span className="material-symbols-outlined">check</span>
-              <span>Valider l'ordre</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Grid de pages */}
-      <div className="flex-1 overflow-auto p-6 custom-scrollbar">
-        {orderedPages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <span className="material-symbols-outlined text-[80px] text-[#c8c6c4] mb-4">folder_open</span>
-            <h2 className="text-xl font-semibold text-[#605e5c] mb-2">Aucune page</h2>
-            <p className="text-sm text-[#605e5c]">Importez des documents pour commencer à organiser</p>
-          </div>
-        ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
+    <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
+      {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+        const rowPages = getRowPages(virtualRow.index)
+        return (
+          <div
+            key={virtualRow.index}
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: `${virtualRow.size}px`, transform: `translateY(${virtualRow.start}px)` }}
           >
-            <SortableContext
-              items={orderedPages.map((p) => p.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
-                {orderedPages.map((page, index) => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3 md:gap-4 px-0.5">
+              {rowPages.map((page) => {
+                const index = orderedPages.findIndex(p => p.id === page.id)
+                return (
                   <SortablePage
                     key={page.id}
                     page={page}
                     index={index}
                     removePage={removePage}
                     rotatePage={rotatePage}
+                    onClick={() => setSelectedPage(page)}
+                    isSelected={selectedPageIds.has(page.id)}
+                    onToggleSelect={togglePageSelection}
                   />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
-        )}
+                )
+              })}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function OrganizePage() {
+  const navigate = useNavigate()
+  const isMobile = useMobile()
+  const gridParentRef = useRef(null)
+
+  // Utiliser nos hooks optimisés avec TanStack Query
+  const {
+    orderedPages,
+    isLoading,
+    isWebSocketConnected,
+    resetOrder,
+    removePage,
+    removePages,
+    reorderPages,
+    addPages,
+    rotatePage,
+  } = useOrganizePages()
+
+  // États locaux UI seulement
+  const [selectedPage, setSelectedPage] = useState(null)
+  const [selectedPageIds, setSelectedPageIds] = useState(new Set())
+  const [selectedTreeNode, setSelectedTreeNode] = useState(null)
+  const [viewingNode, setViewingNode] = useState(null)
+  const [showTypology, setShowTypology] = useState(false)
+  const [classifiedPages, setClassifiedPages] = useState({})
+
+  const { classifyPages, reinsertPages, deleteInstances } = useClassifiedPages(setClassifiedPages)
+
+  // Capteurs pour le drag & drop
+  const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }))
+
+  // Configuration du nombre de colonnes
+  const getColumnsCount = () => {
+    if (typeof window === 'undefined') return 6
+    const width = window.innerWidth
+    if (width >= 1536) return 8
+    if (width >= 1280) return 6
+    if (width >= 1024) return 5
+    if (width >= 768) return 4
+    if (width >= 640) return 3
+    return 2
+  }
+
+  const columnsCount = getColumnsCount()
+
+  // Gestion du drag & drop
+  const handleDragEnd = (event) => {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      const oldIndex = orderedPages.findIndex((item) => item.id === active.id)
+      const newIndex = orderedPages.findIndex((item) => item.id === over.id)
+      reorderPages(oldIndex, newIndex)
+    }
+  }
+
+  // Toggle sélection
+  const togglePageSelection = (pageId) => setSelectedPageIds((prev) => {
+    const newSet = new Set(prev)
+    if (newSet.has(pageId)) newSet.delete(pageId)
+    else newSet.add(pageId)
+    return newSet
+  })
+
+  // Sélectionner tout
+  const toggleSelectAll = () => setSelectedPageIds((prev) =>
+    selectedPageIds.size === orderedPages.length ? new Set() : new Set(orderedPages.map((p) => p.id))
+  )
+
+  // Supprimer les pages sélectionnées
+  const deleteSelectedPages = () => {
+    if (selectedPageIds.size === 0) return
+    if (confirm(`Supprimer ${selectedPageIds.size} page(s) sélectionnée(s) ?`)) {
+      removePages(selectedPageIds)
+      setSelectedPageIds(new Set())
+    }
+  }
+
+  // Classer les pages sélectionnées
+  const assignPagesToNode = (node) => {
+    if (selectedPageIds.size === 0) {
+      alert('Veuillez sélectionner au moins une page à classer')
+      return
+    }
+
+    const pagesToClassify = orderedPages.filter(p => selectedPageIds.has(p.id))
+    const nodeName = node.text || node.name || 'Document'
+
+    classifyPages(node.id, nodeName, pagesToClassify)
+    removePages(selectedPageIds)
+    setSelectedPageIds(new Set())
+  }
+
+  // Voir les pages classées
+  const handleViewInstance = (instance, nodeId) => setViewingNode({ id: nodeId, isInstance: true, instance, name: instance.name })
+
+  // Réinsérer les pages
+  const handleReinsertPages = async (nodeOrInstance) => {
+    if (nodeOrInstance.isInstance) {
+      const pages = await reinsertPages(nodeOrInstance.id, nodeOrInstance.instance.id)
+      if (pages) addPages(pages)
+    } else {
+      const pages = await reinsertPages(nodeOrInstance.id, null)
+      if (pages) addPages(pages)
+    }
+    if (viewingNode?.id === nodeOrInstance.id) setViewingNode(null)
+  }
+
+  // Supprimer instances
+  const handleDeleteNode = (nodeOrInstance) => {
+    if (nodeOrInstance.isInstance) {
+      deleteInstances(nodeOrInstance.id, [nodeOrInstance.instance.id])
+    } else {
+      deleteInstances(nodeOrInstance.id, null)
+    }
+    if (viewingNode?.id === nodeOrInstance.id) setViewingNode(null)
+  }
+
+  // Enregistrer
+  const validateOrder = () => {
+    console.log('Classification terminée:', classifiedPages)
+    console.log('Pages restantes:', orderedPages)
+    alert('Classification enregistrée ! (Fonctionnalité de sauvegarde à implémenter)')
+  }
+
+  // Afficher le chargement initial
+  if (isLoading && orderedPages.length === 0) {
+    return (
+      <div className="flex flex-col h-full bg-[#f3f2f1] dark:bg-dark-bg transition-colors duration-200">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <span className="material-symbols-outlined text-5xl text-[#106EBE] dark:text-blue-400 animate-spin mb-4">progress_activity</span>
+            <p className="text-lg text-[#605e5c] dark:text-dark-text">Chargement des pages...</p>
+          </div>
+        </div>
       </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col h-full bg-[#f3f2f1] dark:bg-dark-bg transition-colors duration-200">
+      {/* Header */}
+      <div className="bg-white dark:bg-dark-bgSecondary border-b border-[#edebe9] dark:border-dark-border p-2 md:p-4 shadow-sm transition-colors duration-200">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-0">
+          <div className="flex items-center space-x-2 md:space-x-4 min-w-0">
+            <button onClick={() => navigate(-1)} className="flex items-center space-x-1 md:space-x-2 text-[#605e5c] dark:text-dark-text hover:text-[#106EBE] dark:hover:text-blue-400 transition-colors min-w-[44px] min-h-[44px]">
+              <span className="material-symbols-outlined">arrow_back</span>
+              <span className="font-medium text-xs md:text-sm hidden sm:inline">Retour</span>
+            </button>
+            <div className="h-6 w-px bg-[#edebe9] dark:bg-dark-border hidden md:block"></div>
+            <div className="min-w-0">
+              <h1 className="text-base md:text-xl font-bold text-[#605e5c] dark:text-dark-text truncate">Organiser la découpe</h1>
+              <p className="text-xs md:text-sm text-[#605e5c] dark:text-dark-text hidden md:block">Sélectionnez des pages et classez-les dans les dossiers</p>
+            </div>
+          </div>
+          <div className="flex items-center justify-between md:justify-end gap-2 overflow-x-auto">
+            <button onClick={() => setShowTypology(!showTypology)} className="md:hidden bg-[#106EBE] dark:bg-blue-600 hover:bg-[#005a9e] dark:hover:bg-blue-700 text-white px-3 py-2 rounded shadow flex items-center space-x-1 transition-all text-xs font-medium min-w-[44px] min-h-[44px]">
+              <span className="material-symbols-outlined text-[18px]">account_tree</span>
+              <span>{showTypology ? 'Grille' : 'Arbre'}</span>
+            </button>
+            <span className="text-xs md:text-sm text-[#605e5c] dark:text-dark-text whitespace-nowrap">{orderedPages.length} pg{orderedPages.length > 1 ? 's' : ''}</span>
+
+            {/* Indicateur WebSocket */}
+            <div className="flex items-center space-x-1 px-2 py-1 rounded-full bg-[#f3f2f1] dark:bg-dark-bgTertiary" title={isWebSocketConnected ? 'WebSocket connecté - Synchronisation temps réel active' : 'WebSocket déconnecté'}>
+              <span className={`w-2 h-2 rounded-full ${isWebSocketConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
+              <span className="text-[10px] text-[#605e5c] dark:text-dark-text hidden md:inline">{isWebSocketConnected ? 'Sync' : 'Offline'}</span>
+            </div>
+            <label className="flex items-center space-x-1 md:space-x-2 cursor-pointer shrink-0">
+              <input type="checkbox" checked={selectedPageIds.size === orderedPages.length && orderedPages.length > 0} onChange={toggleSelectAll} className="w-4 h-4 md:w-4 md:h-4 rounded border-2 border-[#c8c6c4] dark:border-dark-borderLight text-[#106EBE] dark:text-blue-500 focus:ring-[#106EBE] dark:focus:ring-blue-500 focus:ring-2" />
+              <span className="text-xs text-[#605e5c] dark:text-dark-text whitespace-nowrap">{selectedPageIds.size > 0 ? `${selectedPageIds.size} sel.` : 'Tout'}</span>
+            </label>
+            {selectedPageIds.size > 0 && (
+              <button onClick={deleteSelectedPages} className="bg-red-500 hover:bg-red-600 dark:bg-red-700 dark:hover:bg-red-600 text-white px-2 md:px-4 py-2 rounded shadow flex items-center space-x-1 md:space-x-2 transition-all font-medium min-w-[44px] min-h-[44px]">
+                <span className="material-symbols-outlined text-[18px]">delete</span>
+                <span className="hidden sm:inline">Suppr.</span>
+                <span className="hidden xs:inline">({selectedPageIds.size})</span>
+              </button>
+            )}
+            <button onClick={resetOrder} className="bg-gray-200 hover:bg-gray-300 dark:bg-dark-bgTertiary dark:hover:bg-dark-hover text-[#605e5c] dark:text-dark-text px-2 md:px-4 py-2 rounded shadow flex items-center space-x-1 md:space-x-2 transition-all font-medium min-w-[44px] min-h-[44px]" disabled={orderedPages.length === 0}>
+              <span className="material-symbols-outlined text-[18px]">refresh</span>
+              <span className="hidden sm:inline">Réinit.</span>
+            </button>
+            <button onClick={validateOrder} className="bg-[#106EBE] hover:bg-[#005a9e] dark:bg-blue-600 dark:hover:bg-blue-700 text-white px-3 md:px-6 py-2 rounded shadow-lg flex items-center space-x-1 md:space-x-2 transition-all font-medium min-w-[44px] min-h-[44px]">
+              <span className="material-symbols-outlined text-[18px]">save</span>
+              <span className="hidden sm:inline">Enregistrer</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Contenu principal */}
+      <div className="flex-1 flex overflow-hidden">
+        <div ref={gridParentRef} className={`flex-1 overflow-auto p-3 md:p-6 custom-scrollbar ${isMobile && showTypology ? 'hidden' : ''}`}>
+          {orderedPages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <span className="material-symbols-outlined text-[60px] md:text-[80px] text-[#c8c6c4] dark:text-dark-textTertiary mb-4">check_circle</span>
+              <h2 className="text-lg md:text-xl font-semibold text-[#605e5c] dark:text-dark-text mb-2">Toutes les pages sont classées !</h2>
+              <p className="text-sm text-[#605e5c] dark:text-dark-text">Sélectionnez un dossier pour voir les pages classées</p>
+            </div>
+          ) : (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={orderedPages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+                <GridVirtualizer
+                  parentRef={gridParentRef}
+                  orderedPages={orderedPages}
+                  columnsCount={columnsCount}
+                  removePage={removePage}
+                  rotatePage={rotatePage}
+                  setSelectedPage={setSelectedPage}
+                  selectedPageIds={selectedPageIds}
+                  togglePageSelection={togglePageSelection}
+                />
+              </SortableContext>
+            </DndContext>
+          )}
+        </div>
+
+        {/* Zone droite : Arbre de typologie */}
+        <div className={`${isMobile ? 'w-full' : 'w-80 md:w-96'} border-l border-[#edebe9] dark:border-dark-border ${isMobile && !showTypology ? 'hidden' : ''}`}>
+          {isMobile && (
+            <div className="p-2 bg-[#faf9f8] dark:bg-dark-bgSecondary border-b border-[#edebe9] dark:border-dark-border flex items-center justify-between transition-colors duration-200">
+              <span className="text-xs font-semibold text-[#605e5c] dark:text-dark-text">Arbre de typologie</span>
+              <button onClick={() => setShowTypology(false)} className="p-1 rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover text-[#605e5c] dark:text-dark-text min-w-[44px] min-h-[44px] flex items-center justify-center">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+          )}
+          <Suspense fallback={
+            <div className="flex-1 flex items-center justify-center p-4">
+              <span className="material-symbols-outlined text-3xl text-[#106EBE] dark:text-blue-400 animate-spin">progress_activity</span>
+            </div>
+          }>
+            <TypologyTree
+              onNodeSelect={setSelectedTreeNode}
+              onAssignPages={assignPagesToNode}
+              selectedNode={selectedTreeNode}
+              classifiedPages={classifiedPages}
+              onViewPages={handleViewInstance}
+              onReinsertPages={handleReinsertPages}
+              onDeleteNode={handleDeleteNode}
+            />
+          </Suspense>
+        </div>
+      </div>
+
+      {/* Modal de visualisation */}
+      {selectedPage && <PageModal page={selectedPage} onClose={() => setSelectedPage(null)} />}
+
+      {/* Modal des pages classées - placeholder pour l'instant */}
+      {viewingNode && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setViewingNode(null)}>
+          <div className="bg-white dark:bg-dark-bgSecondary rounded-lg p-6 max-w-2xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-xl font-bold mb-4">{viewingNode.name}</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              {viewingNode.instance ? `${viewingNode.instance.pages.length} pages` : 'Visualisation à implémenter'}
+            </p>
+            <button onClick={() => setViewingNode(null)} className="bg-[#106EBE] dark:bg-blue-600 text-white px-4 py-2 rounded">
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

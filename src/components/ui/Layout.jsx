@@ -1,33 +1,41 @@
-import { useState } from 'react'
+import { useState, createContext, useContext } from 'react'
 import Header from '../layout/Header'
-import NavigationTabs from '../layout/NavigationTabs'
-import ScanRibbon from '../layout/ribbons/ScanRibbon'
-import ViewRibbon from '../layout/ribbons/ViewRibbon'
+import UnifiedRibbon from '../layout/ribbons/UnifiedRibbon'
 import Footer from '../layout/Footer'
 import { Outlet } from 'react-router-dom'
 
-function Layout() {
-  const [activeTab, setActiveTab] = useState('Scan')
+// Context pour gérer l'état de la sidebar mobile
+const SidebarContext = createContext({
+  isSidebarOpen: false,
+  toggleSidebar: () => {},
+  closeSidebar: () => {}
+})
 
-  const renderRibbon = () => {
-    switch (activeTab) {
-      case 'Scan':
-        return <ScanRibbon />
-      case 'View':
-        return <ViewRibbon />
-      default:
-        return <ScanRibbon />
-    }
+export const useSidebar = () => useContext(SidebarContext)
+
+function Layout() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
+  const toggleSidebar = () => setIsSidebarOpen(prev => !prev)
+  const closeSidebar = () => setIsSidebarOpen(false)
+
+  const sidebarContextValue = {
+    isSidebarOpen,
+    toggleSidebar,
+    closeSidebar
   }
 
   return (
-    <div className="h-full flex flex-col bg-white overflow-hidden">
-      <Header />
-      <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-      {renderRibbon()}
-      <Outlet />
-      <Footer />
-    </div>
+    <SidebarContext.Provider value={sidebarContextValue}>
+      <div className="h-screen flex flex-col bg-white dark:bg-dark-bg text-[#605e5c] dark:text-dark-text overflow-hidden transition-colors duration-200">
+        <Header onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
+        <UnifiedRibbon />
+        <div className="flex-1 overflow-hidden">
+          <Outlet />
+        </div>
+        <Footer />
+      </div>
+    </SidebarContext.Provider>
   )
 }
 
