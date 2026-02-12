@@ -1,10 +1,41 @@
 """
 Modèles pour la classification et la gestion des pages
 """
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean, Text, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from ..database import Base
+
+
+class Bannette(Base):
+    """
+    Bannette (panier) pour sauvegarder l'état d'un travail en cours
+    """
+    __tablename__ = "bannettes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    # État des pages ordonnées (JSON)
+    pages_order = Column(JSON, nullable=True)
+    # Pages classées (JSON)
+    classified_pages = Column(JSON, nullable=True)
+    # Nombre total de pages
+    total_pages = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "pages_order": self.pages_order,
+            "classified_pages": self.classified_pages,
+            "total_pages": self.total_pages,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
 
 
 class PageClassification(Base):

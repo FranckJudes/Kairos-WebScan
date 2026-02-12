@@ -18,6 +18,8 @@ export function DocumentsProvider({ children }) {
   const queryClient = useQueryClient()
   const [selectedDocumentId, setSelectedDocumentId] = useState(null)
   const [selectedPageNumber, setSelectedPageNumber] = useState(1)
+  const [orderedPages, setOrderedPages] = useState([])
+  const [classifiedPages, setClassifiedPages] = useState({})
 
   // Récupérer les documents depuis le backend avec React Query
   const { data: documentsData, isLoading, error } = useQuery({
@@ -230,6 +232,10 @@ export function DocumentsProvider({ children }) {
     clearDocuments,
     updateDocumentNumPages,
     reorderPages,
+    orderedPages,
+    setOrderedPages,
+    classifiedPages,
+    setClassifiedPages,
     isLoading,
     error,
   }

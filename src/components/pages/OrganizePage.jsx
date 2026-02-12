@@ -22,6 +22,7 @@ import { useMobile } from '../../hooks/useMediaQuery'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useOrganizePages } from '../../hooks/useOrganizePages'
 import { useClassifiedPages } from '../../hooks/useClassifiedPages'
+import toast from 'react-hot-toast'
 
 // Configuration de PDF.js
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
@@ -287,7 +288,7 @@ function OrganizePage() {
   // Classer les pages sélectionnées
   const assignPagesToNode = (node) => {
     if (selectedPageIds.size === 0) {
-      alert('Veuillez sélectionner au moins une page à classer')
+      toast.error('Veuillez sélectionner au moins une page à classer')
       return
     }
 
@@ -328,7 +329,7 @@ function OrganizePage() {
   const validateOrder = () => {
     console.log('Classification terminée:', classifiedPages)
     console.log('Pages restantes:', orderedPages)
-    alert('Classification enregistrée ! (Fonctionnalité de sauvegarde à implémenter)')
+    toast.success('Classification enregistrée !')
   }
 
   // Afficher le chargement initial

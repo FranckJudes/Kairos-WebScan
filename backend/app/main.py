@@ -14,6 +14,7 @@ from .routers import websocket as websocket_router
 from .routers import classification as classification_router
 from .routers import documents as documents_router
 from .routers import upload as upload_router
+from .routers import bannettes as bannettes_router
 from .cache import init_cache
 from .websocket import init_websocket
 
@@ -49,6 +50,7 @@ app.include_router(websocket_router.router)
 app.include_router(classification_router.router)
 app.include_router(documents_router.router)
 app.include_router(upload_router.router)
+app.include_router(bannettes_router.router)
 
 # Route personnalisée pour servir les fichiers uploads avec CORS
 @app.get("/uploads/{filename}")

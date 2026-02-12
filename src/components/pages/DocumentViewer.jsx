@@ -1,14 +1,22 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDocuments } from '../../contexts/DocumentsContext'
+import { useBannettes } from '../../hooks/useBannettes'
+import { useOrganizePages } from '../../hooks/useOrganizePages'
 import FileDropZone from '../ui/FileDropZone'
 import PDFViewer from '../ui/PDFViewer'
 import { useMobile } from '../../hooks/useMediaQuery'
+import toast from 'react-hot-toast'
 
 function DocumentViewer() {
   const navigate = useNavigate()
   const { selectedDocument, addDocuments, selectedPageNumber, updateDocumentNumPages } = useDocuments()
+  const { orderedPages } = useOrganizePages()
+  const { createBannette, isCreating } = useBannettes()
   const [scale, setScale] = useState(1.0)
+  const [showSaveModal, setShowSaveModal] = useState(false)
+  const [bannetteName, setBannetteName] = useState('')
+  const [bannetteDescription, setBannetteDescription] = useState('')
   const isMobile = useMobile()
 
   const handleFileSelect = (e) => {
@@ -28,6 +36,32 @@ function DocumentViewer() {
 
   const goToOrganize = () => {
     navigate('/organize')
+  }
+
+  // Fonction pour enregistrer dans une bannette
+  const handleSave = async () => {
+    // Ouvrir le modal de sauvegarde
+    setShowSaveModal(true)
+  }
+
+  const confirmSave = async () => {
+    try {
+      await createBannette(
+        bannetteName || `Bannette ${new Date().toLocaleDateString('fr-FR')}`,
+        orderedPages,
+        {}, // Pages classées (à récupérer depuis le contexte si nécessaire)
+        orderedPages.length,
+        bannetteDescription || null
+      )
+
+      setShowSaveModal(false)
+      setBannetteName('')
+      setBannetteDescription('')
+      toast.success('Sauvegardé dans les bannettes !')
+    } catch (error) {
+      console.error('Erreur sauvegarde:', error)
+      toast.error('Erreur lors de la sauvegarde')
+    }
   }
 
   if (!selectedDocument) {
@@ -76,6 +110,7 @@ function DocumentViewer() {
     : selectedDocument.url
 
   return (
+    <>
     <main className="flex-1 relative overflow-hidden flex flex-col">
       {/* Document Header */}
       <div className="p-2 md:p-3 border-b border-[#edebe9] dark:border-dark-border bg-[#faf9f8] dark:bg-dark-bgSecondary flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-0 shrink-0 transition-colors duration-200">
@@ -128,13 +163,20 @@ function DocumentViewer() {
               </>
             )}
 
-            {/* Bouton Passer à la découpe */}
+            {/* Boutons d'action */}
             <button
               onClick={goToOrganize}
               className="bg-[#106EBE] dark:bg-blue-600 hover:bg-[#005a9e] dark:hover:bg-blue-700 text-white px-3 md:px-4 py-2 rounded shadow-lg flex items-center space-x-1 md:space-x-2 transition-all text-xs md:text-sm font-medium min-w-[44px] min-h-[44px]"
             >
-              <span className="material-symbols-outlined text-[18px] md:text-[18px]">content_cut</span>
-              <span className="hidden sm:inline">Découpe</span>
+              <span className="material-symbols-outlined text-[18px] md:text-[18px]">reorder</span>
+              <span className="hidden sm:inline">Réorganiser</span>
+            </button>
+            <button
+              onClick={handleSave}
+              className="bg-gray-600 dark:bg-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600 text-white px-3 md:px-4 py-2 rounded shadow-lg flex items-center space-x-1 md:space-x-2 transition-all text-xs md:text-sm font-medium min-w-[44px] min-h-[44px]"
+            >
+              <span className="material-symbols-outlined text-[18px] md:text-[18px]">save</span>
+              <span className="hidden sm:inline">Enregistrer</span>
             </button>
           </div>
         </div>
@@ -185,6 +227,88 @@ function DocumentViewer() {
         </button>
       </div> */}
     </main>
+
+    {/* Modal de sauvegarde dans une bannette */}
+    {showSaveModal && (
+      <div
+        className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+        onClick={() => setShowSaveModal(false)}
+      >
+        <div
+          className="bg-white dark:bg-dark-bgSecondary rounded-lg p-6 max-w-md w-full"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center space-x-3 mb-4">
+            <span className="material-symbols-outlined text-[40px] text-[#106EBE] dark:text-blue-400">folder</span>
+            <div>
+              <h2 className="text-xl font-bold text-[#605e5c] dark:text-dark-text">Enregistrer dans les bannettes</h2>
+              <p className="text-sm text-[#c8c6c4] dark:text-dark-textTertiary mt-1">
+                Sauvegarder l'état actuel pour le recharger plus tard
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-[#605e5c] dark:text-dark-text mb-1">
+                Nom de la bannette *
+              </label>
+              <input
+                type="text"
+                value={bannetteName}
+                onChange={(e) => setBannetteName(e.target.value)}
+                placeholder={`Bannette ${new Date().toLocaleDateString('fr-FR')}`}
+                className="w-full px-3 py-2 border border-[#edebe9] dark:border-dark-border rounded-lg focus:ring-2 focus:ring-[#106EBE] dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-dark-bg text-[#605e5c] dark:text-dark-text"
+                autoFocus
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[#605e5c] dark:text-dark-text mb-1">
+                Description (optionnel)
+              </label>
+              <textarea
+                value={bannetteDescription}
+                onChange={(e) => setBannetteDescription(e.target.value)}
+                placeholder="Description de cette sauvegarde..."
+                rows="3"
+                className="w-full px-3 py-2 border border-[#edebe9] dark:border-dark-border rounded-lg focus:ring-2 focus:ring-[#106EBE] dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-dark-bg text-[#605e5c] dark:text-dark-text resize-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-[#f3f2f1] dark:bg-dark-bgTertiary rounded-lg">
+              <span className="text-sm text-[#605e5c] dark:text-dark-text">
+                Pages à sauvegarder :
+              </span>
+              <span className="font-semibold text-[#106EBE] dark:text-blue-400">
+                {orderedPages.length}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              onClick={() => {
+                setShowSaveModal(false)
+                setBannetteName('')
+                setBannetteDescription('')
+              }}
+              className="px-4 py-2 text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover rounded transition-colors"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={confirmSave}
+              disabled={isCreating || !bannetteName.trim()}
+              className="px-4 py-2 bg-[#106EBE] dark:bg-blue-600 hover:bg-[#005a9e] dark:hover:bg-blue-700 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isCreating ? 'Enregistrement...' : 'Enregistrer'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   )
 }
 

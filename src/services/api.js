@@ -1,4 +1,5 @@
 
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
 export const api = {
@@ -99,7 +100,7 @@ export const api = {
   // Scan Profiles - Mettre à jour un profil
   async updateScanProfile(id, profile) {
     const response = await fetch(`${API_BASE_URL}/scan-profiles/${id}`, {
-      method: 'PUT' | 'PATCH',
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -118,6 +119,65 @@ export const api = {
     })
     if (!response.ok) {
       throw new Error('Failed to delete scan profile')
+    }
+    return response.json()
+  },
+
+  // Bannettes - Récupérer toutes les bannettes
+  async getBannettes() {
+    const response = await fetch(`${API_BASE_URL}/bannettes`)
+    if (!response.ok) {
+      throw new Error('Failed to fetch bannettes')
+    }
+    return response.json()
+  },
+
+  // Bannettes - Récupérer une bannette
+  async getBannette(id) {
+    const response = await fetch(`${API_BASE_URL}/bannettes/${id}`)
+    if (!response.ok) {
+      throw new Error('Failed to fetch bannette')
+    }
+    return response.json()
+  },
+
+  // Bannettes - Créer une nouvelle bannette
+  async createBannette(data) {
+    const response = await fetch(`${API_BASE_URL}/bannettes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+    if (!response.ok) {
+      throw new Error('Failed to create bannette')
+    }
+    return response.json()
+  },
+
+  // Bannettes - Mettre à jour une bannette
+  async updateBannette(id, data) {
+    const response = await fetch(`${API_BASE_URL}/bannettes/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+    if (!response.ok) {
+      throw new Error('Failed to update bannette')
+    }
+    return response.json()
+  },
+
+  // Bannettes - Supprimer une bannette
+  async deleteBannette(id) {
+    const response = await fetch(`${API_BASE_URL}/bannettes/${id}`, {
+      method: 'DELETE',
+    })
+    if (!response.ok) {
+      throw new Error('Failed to delete bannette')
     }
     return response.json()
   },
