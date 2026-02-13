@@ -1,9 +1,10 @@
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMobile } from '../../hooks/useMediaQuery'
 import { useOrganizePages } from '../../hooks/useOrganizePages'
 import { useClassifiedPages } from '../../hooks/useClassifiedPages'
 import TypologyTree from '../ui/TypologyTree'
+import PageThumbnail from '../ui/PageThumbnail'
 import toast from 'react-hot-toast'
 
 function ClassifyPage() {
@@ -18,6 +19,11 @@ function ClassifyPage() {
     removePages,
     addPages,
   } = useOrganizePages()
+
+  // DEBUG: Track orderedPages changes
+  useEffect(() => {
+    console.log('📸 ClassifyPage - orderedPages changed:', orderedPages.length, orderedPages.map(p => p.id))
+  }, [orderedPages])
 
   // États locaux UI seulement
   const [selectedPageIds, setSelectedPageIds] = useState(new Set())
@@ -101,22 +107,21 @@ function ClassifyPage() {
           <div
             key={page.id}
             onClick={() => togglePageSelection(page.id)}
-            className={`relative aspect-[3/4] rounded overflow-hidden cursor-pointer border-2 transition-all ${
-              selectedPageIds.has(page.id)
-                ? 'border-[#106EBE] dark:border-blue-400 ring-2 ring-[#106EBE]/20'
-                : 'border-[#edebe9] dark:border-dark-border hover:border-[#106EBE] dark:hover:border-blue-400'
-            }`}
+            className={`relative aspect-[3/4] rounded overflow-hidden cursor-pointer border-2 transition-all ${selectedPageIds.has(page.id)
+              ? 'border-[#106EBE] dark:border-blue-400 ring-2 ring-[#106EBE]/20'
+              : 'border-[#edebe9] dark:border-dark-border hover:border-[#106EBE] dark:hover:border-blue-400'
+              }`}
           >
-            <img
-              src={page.url}
-              alt={page.documentName}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[8px] text-center py-0.5">
-              {index + 1}
+            <div className="w-full h-full pointer-events-none">
+              <PageThumbnail
+                url={page.url}
+                pageNumber={page.pageNumber}
+                isPdf={page.type === 'application/pdf'}
+                isSelected={selectedPageIds.has(page.id)}
+              />
             </div>
             {selectedPageIds.has(page.id) && (
-              <div className="absolute top-1 right-1 w-3 h-3 bg-[#106EBE] rounded-full flex items-center justify-center">
+              <div className="absolute top-1 right-1 w-3 h-3 bg-[#106EBE] rounded-full flex items-center justify-center z-10">
                 <span className="material-symbols-outlined text-white text-[10px]">check</span>
               </div>
             )}

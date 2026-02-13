@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { useDocuments } from '../../contexts/DocumentsContext'
 import toast from 'react-hot-toast'
 
-function BannettesModal({ isOpen, onClose, bannettes, onLoadBannette, onDeleteBannette, isDeleting }) {
+function BannettesModal({ isOpen, onClose, bannettes, onLoadBannette, onDeleteBannette, isDeleting, currentPage, totalPages, total, goToPage, prevPage, nextPage }) {
   const formatDate = (dateString) => {
     if (!dateString) return ''
     const date = new Date(dateString)
@@ -189,7 +189,7 @@ function Header({ onToggleSidebar, isSidebarOpen }) {
     loadBannette
   } = useBannettes()
   const navigate = useNavigate()
-  const { setOrderedPages, setClassifiedPages } = useDocuments()
+  const { setOrderedPages, setClassifiedPages, addDocuments } = useDocuments()
 
   const handleLoadBannette = async (bannette) => {
     try {
@@ -242,6 +242,27 @@ function Header({ onToggleSidebar, isSidebarOpen }) {
             >
               <span className="material-symbols-outlined text-[18px]">folder_open</span>
             </button>
+            <button
+              onClick={() => document.getElementById('header-file-input')?.click()}
+              className="p-1.5 hover:bg-white/10 dark:hover:bg-white/20 rounded transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              title="Importer des documents"
+            >
+              <span className="material-symbols-outlined text-[18px]">upload_file</span>
+            </button>
+            <input
+              id="header-file-input"
+              type="file"
+              className="hidden"
+              accept=".pdf,.jpg,.jpeg,.png,.tiff,.bmp,.webp"
+              multiple
+              onChange={(e) => {
+                const files = Array.from(e.target.files)
+                if (files.length > 0) {
+                  addDocuments(files)
+                  e.target.value = '' // Reset input
+                }
+              }}
+            />
           </div>
         </div>
         <div className="flex items-center space-x-2 sm:space-x-4">
@@ -280,6 +301,12 @@ function Header({ onToggleSidebar, isSidebarOpen }) {
         onLoadBannette={handleLoadBannette}
         onDeleteBannette={handleDeleteBannette}
         isDeleting={isLoading}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        total={total}
+        goToPage={goToPage}
+        prevPage={prevPage}
+        nextPage={nextPage}
       />
     </>
   )

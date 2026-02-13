@@ -1,7 +1,8 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useDocuments } from '../contexts/DocumentsContext'
 import useWebSocket from './useWebSocket'
+import { classificationApi } from '../services/classificationApi'
 
 /**
  * Hook optimisé avec Redis (cache backend) + WebSocket (temps réel)
@@ -15,82 +16,13 @@ import useWebSocket from './useWebSocket'
  * - Synchronisation multi-onglets
  */
 export const useOrganizePages = () => {
-  const { documents } = useDocuments()
+  // On accède à la ref du contexte pour que l'état "vu" survive au démontage du composant
+  const { documents, orderedPages, setOrderedPages, allPages } = useDocuments()
   const queryClient = useQueryClient()
   const { isConnected, eventEmitter } = useWebSocket()
 
-  // Calculer toutes les pages (cache local avec useMemo)
-  const allPages = useMemo(() => {
-    const pages = []
-    documents.forEach((doc) => {
-      // Normaliser les noms de champs pour compatibilité backend/frontend
-      const docType = doc.type || doc.file_type || 'image/png'
-      const docName = doc.name || doc.original_name || 'Document'
-      const docSize = doc.size || doc.file_size || 10000
-
-      if (doc.pages && doc.pages.length > 0) {
-        doc.pages.forEach((page) => {
-          pages.push({
-            id: `${doc.id}-page-${page.pageNumber}`,
-            documentId: doc.id,
-            documentName: docName,
-            pageNumber: page.pageNumber,
-            type: page.type || 'image/png',
-            url: page.url,
-            size: docSize / doc.pages.length,
-            rotation: 0
-          })
-        })
-      } else if (docType === 'application/pdf') {
-        const numPages = doc.numPages || 1
-        for (let i = 1; i <= numPages; i++) {
-          pages.push({
-            id: `${doc.id}-page-${i}`,
-            documentId: doc.id,
-            documentName: docName,
-            pageNumber: i,
-            type: docType,
-            url: doc.url,
-            size: docSize / numPages,
-            rotation: 0
-          })
-        }
-      } else {
-        pages.push({
-          id: `${doc.id}-page-1`,
-          documentId: doc.id,
-          documentName: docName,
-          pageNumber: 1,
-          type: docType,
-          url: doc.url,
-          size: docSize,
-          rotation: 0
-        })
-      }
-    })
-    return pages
-  }, [documents])
-
-  // État local pour les pages ordonnées
-  const [orderedPages, setOrderedPages] = useState([])
-
-  // Initialiser depuis le cache TanStack Query si disponible
-  const { data: cachedOrderedPages } = useQuery({
-    queryKey: ['organize', 'orderedPages'],
-    queryFn: () => Promise.resolve(orderedPages),
-    initialData: allPages,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    enabled: false, // Ne pas refetch automatiquement
-  })
-
-  // Synchroniser une seule fois au chargement
-  useEffect(() => {
-    if (allPages.length > 0 && orderedPages.length === 0) {
-      // Restaurer depuis le cache si disponible
-      const cached = queryClient.getQueryData(['organize', 'orderedPages'])
-      setOrderedPages(cached || allPages)
-    }
-  }, [allPages, orderedPages.length, queryClient])
+  // Note: La logique de remplissage de orderedPages est maintenant dans DocumentsContext
+  // pour survivre aux démontages de composants.
 
   // Écouter les événements WebSocket pour la synchronisation temps réel
   useEffect(() => {

@@ -136,7 +136,8 @@ function Sidebar() {
               >
                 <div className="space-y-1 px-3 py-3">
                   {orderedPages.map((page) => {
-                    const isPdfPage = page.url && !page.url.includes('.')
+                    // Détecter si c'est un PDF en vérifiant l'extension
+                    const isPdfPage = page.url && page.url.toLowerCase().endsWith('.pdf')
 
                     return (
                       <div key={page.id} className="relative">

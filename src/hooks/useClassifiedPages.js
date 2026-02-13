@@ -1,4 +1,5 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { classificationApi } from '../services/classificationApi'
 
 /**
  * Hook pour gérer les pages classées
@@ -9,13 +10,26 @@ export const useClassifiedPages = (setStateCallback) => {
     console.warn('useClassifiedPages: No setStateCallback provided')
   }
 
+  const queryClient = useQueryClient()
+
   // Mutation pour classer des pages
   const classifyPages = useMutation({
-    mutationFn: ({ nodeId, nodeName, pages }) => Promise.resolve({ nodeId, nodeName, pages }),
-    onSuccess: ({ nodeId, nodeName, pages }) => {
+    mutationFn: ({ nodeId, nodeName, pages }) => classificationApi.classify(nodeId, nodeName, pages),
+    onSuccess: (data) => {
+      // Invalider le cache pour forcer le rafraîchissement
+      queryClient.invalidateQueries({ queryKey: ['classification', 'pages'] })
+
       if (!setStateCallback) return
 
+      // Mise à jour optimiste ou basée sur la réponse du serveur
+      // La structure de réponse doit correspondre à ce qu'on attend
+      // Pour l'instant, on garde la logique de mise à jour locale en attendant que le backend soit prêt
+      // Si le backend renvoie la nouvelle structure complète, on pourrait l'utiliser directement
+
       setStateCallback((prev = {}) => {
+        const nodeId = data.nodeId || data.node_id
+        const nodeName = data.nodeName || data.node_name
+
         const currentNodeData = prev[nodeId] || {}
         const newNodeData = {}
 
@@ -29,29 +43,10 @@ export const useClassifiedPages = (setStateCallback) => {
           newNodeData[nodeName] = []
         }
 
-        // Compter les instances existantes
-        const existingInstances = newNodeData[nodeName].filter(
-          inst => inst.originalName === nodeName
-        )
-        const instanceNumber = existingInstances.length + 1
-
-        // Générer le nom de l'instance
-        const instanceName = instanceNumber === 1
-          ? nodeName
-          : `${nodeName} (${instanceNumber})`
-
-        // Créer la nouvelle instance
-        const newInstance = {
-          id: `${nodeId}-${nodeName}-${instanceNumber}-${Date.now()}`,
-          name: instanceName,
-          originalName: nodeName,
-          typologyName: nodeName,
-          pages: pages,
-          sourceDocuments: [...new Set(pages.map(p => p.documentName))],
-          createdAt: new Date().toISOString()
+        // Ajouter la nouvelle instance retournée par le backend
+        if (data.instance) {
+          newNodeData[nodeName] = [...newNodeData[nodeName], data.instance]
         }
-
-        newNodeData[nodeName] = [...newNodeData[nodeName], newInstance]
 
         return {
           ...prev,
@@ -63,59 +58,59 @@ export const useClassifiedPages = (setStateCallback) => {
 
   // Mutation pour réinsérer des pages
   const reinsertPages = useMutation({
-    mutationFn: ({ nodeId, instanceId }) => {
-      let pagesToReinsert = []
+    mutationFn: ({ nodeId, instanceId }) => classificationApi.reinsert(instanceId),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['classification', 'pages'] })
 
-      setStateCallback((prev = {}) => {
-        const nodeData = prev[nodeId]
-        if (!nodeData) return prev
+      const { nodeId, instanceId } = variables
+      let pagesToReinsert = data.pages || []
 
-        const newNodeData = {}
+      if (setStateCallback) {
+        setStateCallback((prev = {}) => {
+          const nodeData = prev[nodeId]
+          if (!nodeData) return prev
 
-        if (instanceId) {
-          // Réinsérer une instance spécifique
-          Object.entries(nodeData).forEach(([docName, instances]) => {
-            const instance = instances.find(inst => inst.id === instanceId)
-            if (instance) {
-              pagesToReinsert = [...instance.pages]
-            }
-            newNodeData[docName] = instances.filter(inst => inst.id !== instanceId)
-          })
+          const newNodeData = {}
 
-          // Nettoyer les documents vides
-          Object.keys(newNodeData).forEach(docName => {
-            if (newNodeData[docName].length === 0) {
-              delete newNodeData[docName]
-            }
-          })
-        } else {
-          // Réinsérer toutes les pages du nœud
-          Object.values(nodeData).forEach(instances => {
-            instances.forEach(instance => {
-              pagesToReinsert = [...pagesToReinsert, ...instance.pages]
+          if (instanceId) {
+            // Réinsérer une instance spécifique
+            Object.entries(nodeData).forEach(([docName, instances]) => {
+              newNodeData[docName] = instances.filter(inst => inst.id !== instanceId)
             })
-          })
 
-          // Supprimer le nœud entier
-          const newState = { ...prev }
-          delete newState[nodeId]
-          return newState
-        }
+            // Nettoyer les documents vides
+            Object.keys(newNodeData).forEach(docName => {
+              if (newNodeData[docName].length === 0) {
+                delete newNodeData[docName]
+              }
+            })
+          } else {
+            // Réinsérer toutes les pages du nœud
+            // Supprimer le nœud entier
+            const newState = { ...prev }
+            delete newState[nodeId]
+            return newState
+          }
 
-        return {
-          ...prev,
-          [nodeId]: Object.keys(newNodeData).length > 0 ? newNodeData : undefined
-        }
-      })
+          return {
+            ...prev,
+            [nodeId]: Object.keys(newNodeData).length > 0 ? newNodeData : undefined
+          }
+        })
+      }
 
-      return Promise.resolve(pagesToReinsert)
+      return pagesToReinsert
     }
   })
 
   // Mutation pour supprimer des instances
   const deleteInstances = useMutation({
-    mutationFn: ({ nodeId, instanceIds }) => Promise.resolve({ nodeId, instanceIds }),
-    onSuccess: ({ nodeId, instanceIds }) => {
+    mutationFn: ({ nodeId, instanceIds }) => classificationApi.deleteInstances(instanceIds),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['classification', 'pages'] })
+
+      const { nodeId, instanceIds } = variables
+
       if (!setStateCallback) return
 
       setStateCallback((prev = {}) => {

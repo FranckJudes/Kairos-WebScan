@@ -47,6 +47,18 @@ class ReinsertPagesResponse(BaseModel):
     reinserted_pages: List[int]
 
 
+class DeleteInstancesRequest(BaseModel):
+    """Requête pour supprimer plusieurs instances"""
+    instance_ids: List[int]
+
+
+class ClassifiedPageItem(BaseModel):
+    document_id: int
+    page_number: int
+    type_id: int
+    instance_id: int
+
+
 @router.post("/classify", response_model=ClassifyPagesResponse)
 async def classify_pages(
     request: ClassifyPagesRequest,
@@ -256,6 +268,66 @@ async def get_document_instances(
     return {
         "document_id": document_id,
         "classifications": list(grouped.values())
+    }
+
+
+@router.post("/instances/delete")
+async def delete_instances_batch(
+    request: DeleteInstancesRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Supprime plusieurs instances de classification
+    """
+    manager = get_manager()
+    cache = get_cache()
+    
+    # Supprimer les instances
+    deleted = db.query(PageClassification).filter(
+        PageClassification.id.in_(request.instance_ids)
+    ).delete(synchronize_session='fetch')
+    
+    db.commit()
+    
+    # Invalider le cache
+    if cache:
+        cache.invalidate_typology()
+
+    # Notifier pour chaque instance (optimisation possible: notifier en batch)
+    # Pour l'instant on envoie une notification générique
+    await manager.notify_batch_update({
+        "operation": "batch_delete",
+        "deleted_count": deleted
+    })
+    
+    return {
+        "success": True,
+        "message": f"{deleted} instance(s) supprimée(s)",
+        "deleted_count": deleted
+    }
+
+
+@router.get("/all")
+async def get_all_classified_pages(
+    db: Session = Depends(get_db)
+):
+    """
+    Récupère TOUTES les pages classées pour filtrage global
+    """
+    classifications = db.query(PageClassification).all()
+    
+    results = []
+    for c in classifications:
+        results.append({
+            "document_id": c.document_id,
+            "page_number": c.page_number,
+            "type_id": c.type_id,
+            "instance_id": c.id
+        })
+        
+    return {
+        "total": len(results),
+        "pages": results
     }
 
 

@@ -60,7 +60,23 @@ async def get_uploaded_file(filename: str):
     if not os.path.exists(file_path):
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Fichier non trouvé")
-    return FileResponse(file_path)
+    
+    # Déterminer le type de média
+    media_type = "application/pdf" if filename.endswith('.pdf') else "application/octet-stream"
+    
+    # Créer la réponse avec headers CORS explicites
+    response = FileResponse(
+        file_path,
+        media_type=media_type,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+            "Cross-Origin-Resource-Policy": "cross-origin",
+            "Cross-Origin-Embedder-Policy": "require-corp"
+        }
+    )
+    return response
 
 
 # Route racine
