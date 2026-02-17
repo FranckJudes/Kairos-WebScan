@@ -26,7 +26,6 @@ async function fetchImageFromPath(imagePath) {
     const blob = await response.blob()
     return blob
   } catch (error) {
-    console.error('Error fetching image:', error)
     throw error
   }
 }
@@ -38,21 +37,15 @@ export const useScan = () => {
     mutationFn: async ({ profile, scannerId }) => {
       const scanRequest = scanApi.mapScanRequest(profile, scannerId)
       const data = await scanApi.scan(scanRequest)
-
-      console.log('Scan successful:', data)
-
       const images = data.scannedImages || []
 
       if (data.success && images.length > 0) {
-        // Créer UN seul document multi-pages avec toutes les images scannées
         const pages = images.map((img, index) => {
           const mimeType = getMimeTypeFromFormat(img.format)
 
-          // Utiliser l'URL directe du backend de scan (plus rapide, pas de proxy)
           const backendPath = img.path.replace(/\\/g, '\\\\')
           const imageUrl = `${SCAN_API_BASE_URL}/api/WiaScanner/image?path=${encodeURIComponent(backendPath)}`
 
-          console.log(`Page ${index} URL:`, imageUrl)
 
           return {
             pageNumber: index + 1,
@@ -67,36 +60,30 @@ export const useScan = () => {
         const document = {
           id: documentId,
           name: filename,
-          type: 'application/pdf', // Type PDF pour indiquer un document multi-pages
+          type: 'application/pdf', 
           size: 10000 * pages.length,
-          url: pages[0].url, // URL de la première page pour l'affichage par défaut
-          pages: pages, // Toutes les pages du document
+          url: pages[0].url, 
+          pages: pages, 
           createdAt: new Date().toISOString(),
           numPages: pages.length,
         }
 
-        console.log(`Created document with ${pages.length} pages`)
 
-        // Précharger toutes les pages en arrière-plan
         pages.forEach((page, index) => {
           const img = new Image()
           img.src = page.url
           img.onload = () => {
-            console.log(`Page ${index + 1} preloaded and ready`)
           }
           img.onerror = () => {
-            console.error(`Failed to preload page ${index + 1}`)
           }
         })
 
         return { documents: [document], scanData: data }
       }
 
-      console.log('Scan succeeded but no images found')
       return { documents: [], scanData: data }
     },
     onError: (error) => {
-      console.error('Scan error:', error)
       throw error
     },
   })

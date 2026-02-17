@@ -1,49 +1,26 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useDocuments } from '../contexts/DocumentsContext'
 import useWebSocket from './useWebSocket'
-import { classificationApi } from '../services/classificationApi'
 
-/**
- * Hook optimisé avec Redis (cache backend) + WebSocket (temps réel)
- *
- * Cache Redis :
- * - Typologie : 1 heure
- * - Thumbnails : 24 heures
- *
- * WebSocket :
- * - Notifications temps réel
- * - Synchronisation multi-onglets
- */
 export const useOrganizePages = () => {
-  // On accède à la ref du contexte pour que l'état "vu" survive au démontage du composant
-  const { documents, orderedPages, setOrderedPages, allPages } = useDocuments()
+  const { orderedPages, setOrderedPages, allPages } = useDocuments()
   const queryClient = useQueryClient()
   const { isConnected, eventEmitter } = useWebSocket()
 
-  // Note: La logique de remplissage de orderedPages est maintenant dans DocumentsContext
-  // pour survivre aux démontages de composants.
-
-  // Écouter les événements WebSocket pour la synchronisation temps réel
   useEffect(() => {
     if (!eventEmitter) return
 
     const handlePagesClassified = (data) => {
-      console.log('📡 WebSocket: Pages classées', data)
-      // Retirer les pages classées de la grille
       if (data.pages) {
         setOrderedPages(prev => prev.filter(p => !data.pages.includes(p.id)))
       }
     }
 
     const handlePagesReinserted = (data) => {
-      console.log('📡 WebSocket: Pages réinsérées', data)
-      // Les pages seront ajoutées par le hook useClassifiedPages
     }
 
     const handleTypologyUpdated = (data) => {
-      console.log('📡 WebSocket: Typologie mise à jour', data)
-      // Invalider le cache de la typologie
       queryClient.invalidateQueries({ queryKey: ['typology', 'tree'] })
     }
 
@@ -56,9 +33,8 @@ export const useOrganizePages = () => {
       eventEmitter.off('pages_reinserted', handlePagesReinserted)
       eventEmitter.off('typology_updated', handleTypologyUpdated)
     }
-  }, [eventEmitter, queryClient])
+  }, [eventEmitter, queryClient, setOrderedPages])
 
-  // Actions optimisées avec mise à jour du cache
   const resetOrder = () => {
     setOrderedPages(allPages)
     queryClient.setQueryData(['organize', 'orderedPages'], allPages)
@@ -108,19 +84,28 @@ export const useOrganizePages = () => {
     })
   }
 
+  const updatePageUrl = (pageId, newUrl) => {
+    setOrderedPages(prev => {
+      const updated = prev.map(page =>
+        page.id === pageId ? { ...page, url: newUrl } : page
+      )
+      queryClient.setQueryData(['organize', 'orderedPages'], updated)
+      return updated
+    })
+  }
+
   return {
-    // État
     allPages,
     orderedPages,
-    isLoading: allPages.length === 0 && orderedPages.length === 0,
+    isLoading: false,
     isWebSocketConnected: isConnected,
 
-    // Actions
     resetOrder,
     removePage,
     removePages,
     reorderPages,
     addPages,
     rotatePage,
+    updatePageUrl,
   }
 }

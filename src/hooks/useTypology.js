@@ -1,6 +1,7 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { typologyApi } from '../services/typologyApi'
 import { useMemo } from 'react'
+import toast from 'react-hot-toast'
 
 export const useTypologyTree = () => {
   const query = useQuery({
@@ -29,5 +30,20 @@ export const useTypologyInitialization = () => {
     staleTime: Infinity, // Pas besoin de recharger
     retry: 1,
     enabled: false, // Ne s'exécute pas automatiquement
+  })
+}
+
+export const useCreateTypology = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: typologyApi.createNode,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['typology', 'tree'] })
+      toast.success('Typologie créée avec succès')
+    },
+    onError: (error) => {
+      toast.error(`Erreur lors de la création: ${error.message}`)
+    },
   })
 }

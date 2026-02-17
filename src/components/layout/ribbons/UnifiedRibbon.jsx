@@ -8,8 +8,6 @@ function UnifiedRibbon() {
   const [selectedScanner, setSelectedScanner] = useState('')
   const [selectedProfileId, setSelectedProfileId] = useState('')
   const [manualOverrides, setManualOverrides] = useState({})
-  const [zoomLevel, setZoomLevel] = useState('100%')
-  const [rotation, setRotation] = useState(0)
 
   const { data: scanners = [], isLoading: scannersLoading, error: scannersError } = useScanners('ALL')
   const { profiles, isLoading: profilesLoading } = useScanProfiles()
@@ -258,66 +256,6 @@ function UnifiedRibbon() {
 
       {/* Spacer */}
       <div className="flex-1"></div>
-
-      {/* View Controls */}
-      <div className="flex items-center space-x-1 px-3">
-        <button
-          className="p-2 rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover transition-colors"
-          onClick={() => setZoomLevel(prev => Math.max(25, parseInt(prev) - 25) + '%')}
-          title="Zoom arrière"
-        >
-          <span className="material-symbols-outlined text-[24px] text-[#605e5c] dark:text-dark-text">zoom_out</span>
-        </button>
-
-        <select
-          className="text-[11px] py-1.5 px-2 bg-white dark:bg-dark-bg border border-[#edebe9] dark:border-dark-border rounded focus:ring-1 focus:ring-[#106EBE] text-[#605e5c] dark:text-dark-text"
-          value={zoomLevel}
-          onChange={(e) => setZoomLevel(e.target.value)}
-        >
-          <option>50%</option>
-          <option>75%</option>
-          <option>100%</option>
-          <option>125%</option>
-          <option>150%</option>
-          <option>200%</option>
-        </select>
-
-        <button
-          className="p-2 rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover transition-colors"
-          onClick={() => setZoomLevel(prev => Math.min(400, parseInt(prev) + 25) + '%')}
-          title="Zoom avant"
-        >
-          <span className="material-symbols-outlined text-[24px] text-[#605e5c] dark:text-dark-text">zoom_in</span>
-        </button>
-
-        <div className="w-px h-8 bg-[#edebe9] dark:bg-dark-border mx-1"></div>
-
-        <button
-          className="p-2 rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover transition-colors"
-          onClick={() => setRotation(prev => (prev - 90 + 360) % 360)}
-          title="Rotation gauche"
-        >
-          <span className="material-symbols-outlined text-[24px] text-[#605e5c] dark:text-dark-text">rotate_left</span>
-        </button>
-
-        <button
-          className="p-2 rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover transition-colors"
-          onClick={() => setRotation(prev => (prev + 90) % 360)}
-          title="Rotation droite"
-        >
-          <span className="material-symbols-outlined text-[24px] text-[#605e5c] dark:text-dark-text">rotate_right</span>
-        </button>
-
-        <div className="w-px h-8 bg-[#edebe9] dark:bg-dark-border mx-1"></div>
-
-        <button className="p-2 rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover transition-colors" title="Ajuster à la largeur">
-          <span className="material-symbols-outlined text-[24px] text-[#605e5c] dark:text-dark-text">aspect_ratio</span>
-        </button>
-
-        <button className="p-2 rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover transition-colors" title="Ajuster à la page">
-          <span className="material-symbols-outlined text-[24px] text-[#605e5c] dark:text-dark-text">fullscreen</span>
-        </button>
-      </div>
     </div>
   )
 }

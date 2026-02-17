@@ -1,9 +1,12 @@
-import { useTypologyTree } from '../../hooks/useTypology'
+import { useTypologyTree, useCreateTypology } from '../../hooks/useTypology'
 import { useState } from 'react'
+import { Plus } from 'lucide-react'
 
 function TypologyTree({ onNodeSelect, onAssignPages, selectedNode, classifiedPages = {}, onViewPages, onReinsertPages, onDeleteNode }) {
   const { data: treeData, isLoading, error } = useTypologyTree()
+  const createTypology = useCreateTypology()
   const [openNodes, setOpenNodes] = useState(new Set())
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
   // Toggle l'ouverture d'un nœud
   const toggleNode = (nodeId) => {
@@ -121,6 +124,13 @@ function TypologyTree({ onNodeSelect, onAssignPages, selectedNode, classifiedPag
             <span className="material-symbols-outlined text-[16px] mr-2">account_tree</span>
             Typologie des Documents
           </h2>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="p-1.5 rounded hover:bg-[#106EBE] dark:hover:bg-blue-600 hover:text-white text-[#106EBE] dark:text-blue-400 transition-colors"
+            title="Créer une typologie"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
         </div>
         <p className="text-[10px] text-[#c8c6c4] dark:text-dark-textSecondary">
           Sélectionnez un dossier, puis cliquez sur "Classer les pages"
@@ -170,6 +180,24 @@ function TypologyTree({ onNodeSelect, onAssignPages, selectedNode, classifiedPag
             <span className="material-symbols-outlined text-[18px]">folder_open</span>
             <span>Classer les pages sélectionnées</span>
           </button>
+        </div>
+      )}
+
+      {/* Modal de création de typologie */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowCreateModal(false)}>
+          <div className="bg-white dark:bg-dark-bgSecondary rounded-lg p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-xl font-bold mb-4 text-[#605e5c] dark:text-dark-text">Créer une typologie</h2>
+            <CreateTypologyForm
+              treeData={treeData || []}
+              onSubmit={(data) => {
+                createTypology.mutate(data)
+                setShowCreateModal(false)
+              }}
+              onCancel={() => setShowCreateModal(false)}
+              isLoading={createTypology.isPending}
+            />
+          </div>
         </div>
       )}
     </div>
@@ -448,6 +476,143 @@ function InstanceNode({ instance, level, nodeId, isSelected, onSelectInstance, o
         </button>
       </div>
     </div>
+  )
+}
+
+// Composant Modal pour créer une typologie
+function CreateTypologyForm({ treeData, onSubmit, onCancel, isLoading }) {
+  const [name, setName] = useState('')
+  const [code, setCode] = useState('')
+  const [parentId, setParentId] = useState('')
+  const [type, setType] = useState('folder')
+
+  // Aplatir l'arbre pour obtenir tous les dossiers
+  const flattenTreeNodes = (nodes, depth = 0) => {
+    if (!nodes) return []
+    const result = []
+    nodes.forEach(node => {
+      result.push({
+        id: node.id,
+        name: node.name,
+        depth: depth
+      })
+      if (node.children && node.children.length > 0) {
+        result.push(...flattenTreeNodes(node.children, depth + 1))
+      }
+    })
+    return result
+  }
+
+  const allFolders = flattenTreeNodes(treeData)
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (!name.trim()) return
+
+    const data = {
+      name: name.trim(),
+      type: type,
+      ...(code.trim() && { code: code.trim() }),
+      ...(parentId && { parent_id: parseInt(parentId) }),
+    }
+
+    onSubmit(data)
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-[#605e5c] dark:text-dark-text mb-1">
+          Nom <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="w-full px-3 py-2 border border-[#c8c6c4] dark:border-dark-border rounded focus:ring-2 focus:ring-[#106EBE] dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-dark-bg text-[#605e5c] dark:text-dark-text"
+          placeholder="Ex: Factures"
+          required
+          autoFocus
+        />
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-[#605e5c] dark:text-dark-text mb-1">
+          Code
+        </label>
+        <input
+          type="text"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          className="w-full px-3 py-2 border border-[#c8c6c4] dark:border-dark-border rounded focus:ring-2 focus:ring-[#106EBE] dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-dark-bg text-[#605e5c] dark:text-dark-text"
+          placeholder="Ex: FAC-001"
+        />
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-[#605e5c] dark:text-dark-text mb-1">
+          Type <span className="text-red-500">*</span>
+        </label>
+        <select
+          value={type}
+          onChange={(e) => setType(e.target.value)}
+          className="w-full px-3 py-2 border border-[#c8c6c4] dark:border-dark-border rounded focus:ring-2 focus:ring-[#106EBE] dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-dark-bg text-[#605e5c] dark:text-dark-text"
+          required
+        >
+          <option value="folder">📁 Dossier</option>
+          <option value="document">📄 Document</option>
+        </select>
+      </div>
+
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-[#605e5c] dark:text-dark-text mb-1">
+          Dossier parent
+        </label>
+        <select
+          value={parentId}
+          onChange={(e) => setParentId(e.target.value)}
+          className="w-full px-3 py-2 border border-[#c8c6c4] dark:border-dark-border rounded focus:ring-2 focus:ring-[#106EBE] dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-dark-bg text-[#605e5c] dark:text-dark-text"
+        >
+          <option value="">Racine (pas de parent)</option>
+          {allFolders.map(folder => (
+            <option key={folder.id} value={folder.id}>
+              {'\u00A0\u00A0'.repeat(folder.depth)}{folder.depth > 0 ? '└ ' : ''}{folder.name}
+            </option>
+          ))}
+        </select>
+        <p className="text-[10px] text-[#c8c6c4] dark:text-dark-textTertiary mt-1">
+          Sélectionnez le dossier parent ou laissez vide pour la racine
+        </p>
+      </div>
+
+      <div className="flex justify-end space-x-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={isLoading}
+          className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-dark-bgTertiary dark:hover:bg-dark-hover text-[#605e5c] dark:text-dark-text rounded transition-colors font-medium disabled:opacity-50"
+        >
+          Annuler
+        </button>
+        <button
+          type="submit"
+          disabled={isLoading || !name.trim()}
+          className="px-4 py-2 bg-[#106EBE] hover:bg-[#005a9e] dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded transition-colors font-medium disabled:opacity-50 flex items-center space-x-2"
+        >
+          {isLoading ? (
+            <>
+              <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+              <span>Création...</span>
+            </>
+          ) : (
+            <>
+              <Plus className="w-4 h-4" />
+              <span>Créer</span>
+            </>
+          )}
+        </button>
+      </div>
+    </form>
   )
 }
 

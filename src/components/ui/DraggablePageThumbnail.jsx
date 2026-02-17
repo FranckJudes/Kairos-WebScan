@@ -2,7 +2,7 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import PageThumbnail from './PageThumbnail'
 
-function DraggablePageThumbnail({ id, url, pageNumber, isSelected, onClick, isPdf, disabled }) {
+function DraggablePageThumbnail({ id, url, pageNumber, originalPageNumber, isSelected, isCheckboxSelected, onCheckboxToggle, onClick, isPdf, disabled }) {
   const {
     attributes,
     listeners,
@@ -24,15 +24,31 @@ function DraggablePageThumbnail({ id, url, pageNumber, isSelected, onClick, isPd
   return (
     <div ref={setNodeRef} style={style}>
       <div
-        className="relative group"
+        className={`relative group ${isCheckboxSelected ? 'ring-2 ring-blue-500 dark:ring-blue-400 ring-offset-2 dark:ring-offset-dark-bg rounded-sm' : ''}`}
         {...(!disabled && { ...attributes, ...listeners })}
       >
+        {/* Checkbox */}
+        <div className="absolute top-1 left-1 z-10">
+          <input
+            type="checkbox"
+            checked={isCheckboxSelected}
+            onChange={(e) => {
+              e.stopPropagation()
+              onCheckboxToggle()
+            }}
+            className="w-4 h-4 rounded border-gray-300 text-[#106EBE] focus:ring-[#106EBE] cursor-pointer"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+
         <PageThumbnail
           url={url}
           pageNumber={pageNumber}
+          originalPageNumber={originalPageNumber}
           isSelected={isSelected}
           onClick={onClick}
           isPdf={isPdf}
+          hasCheckbox={true}
         />
         {/* Indicateur de drag - poignée */}
         {!disabled && (

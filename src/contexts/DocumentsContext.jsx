@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useRef, useEffect } from 'react'
+import { createContext, useContext, useState, useRef, useEffect, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { documentsApi } from '../hooks/useDocumentsApi'
 import useWebSocket from '../hooks/useWebSocket'
@@ -21,12 +21,10 @@ export function DocumentsProvider({ children }) {
   const [selectedPageNumber, setSelectedPageNumber] = useState(1)
   const [orderedPages, setOrderedPages] = useState([])
   const [classifiedPages, setClassifiedPages] = useState({})
+  const [documentVersion, setDocumentVersion] = useState(0) // Pour forcer le re-render
 
   const seenPageIdsRef = useRef(new Set())
 
-  // Récupérer les documents depuis le backend avec React Query
-  // DÉSACTIVÉ par défaut pour comportement de session éphémère
-  // (l'application ne charge PAS les documents de la BD au démarrage)
   const { data: documentsData, isLoading, error, refetch } = useQuery({
     queryKey: ['documents', 'list'],
     queryFn: () => documentsApi.listDocuments(0, 100),
@@ -34,16 +32,21 @@ export function DocumentsProvider({ children }) {
     enabled: false, // Ne charge PAS automatiquement - seulement via upload
   })
 
-  // Extraire les documents du résultat et normaliser les champs
-  const documents = (documentsData?.documents || []).map(doc => ({
-    ...doc,
-    // Normaliser les noms de champs pour compatibilité frontend
-    name: doc.original_name || doc.name,
-    type: doc.file_type || doc.type,
-    // URL complète avec le backend pour éviter les problèmes CORS
-    url: doc.url || `${API_BASE_URL}/uploads/${doc.filename}`,
-    createdAt: doc.created_at || doc.createdAt
-  }))
+  const documents = (documentsData?.documents || []).map(doc => {
+    // Si l'URL est relative (commence par /), on ajoute l'URL de base
+    let docUrl = doc.url || `${API_BASE_URL}/uploads/${doc.filename}`
+    if (docUrl.startsWith('/')) {
+      docUrl = `${API_BASE_URL}${docUrl}`
+    }
+
+    return {
+      ...doc,
+      name: doc.original_name || doc.name,
+      type: doc.file_type || doc.type,
+      url: docUrl,
+      createdAt: doc.created_at || doc.createdAt
+    }
+  })
 
   /**
    * Ajouter un document (upload vers le backend)
@@ -52,21 +55,29 @@ export function DocumentsProvider({ children }) {
     try {
       const result = await documentsApi.uploadDocument(file)
 
+
       if (result.success) {
         const newDoc = result.document
 
-        // Refetch manuellement car enabled:false empêche invalidateQueries de fonctionner
-        await refetch()
+        const fullUrl = newDoc.url?.startsWith('/')
+          ? `${API_BASE_URL}${newDoc.url}`
+          : (newDoc.url || `${API_BASE_URL}/uploads/${newDoc.filename}`)
 
-        // Sélectionner le nouveau document
+        queryClient.setQueryData(['documents', 'list'], (old) => {
+          const currentDocs = old?.documents || []
+          return {
+            ...old,
+            documents: [...currentDocs, newDoc],
+            total: (old?.total || 0) + 1
+          }
+        })
+
         setSelectedDocumentId(newDoc.id)
         setSelectedPageNumber(1)
 
-        console.log('✅ Document uploadé:', newDoc.original_name)
         return newDoc
       }
     } catch (error) {
-      console.error('❌ Erreur upload document:', error)
       throw error
     }
   }
@@ -88,11 +99,9 @@ export function DocumentsProvider({ children }) {
       }
 
       const successCount = results.filter(r => r.success).length
-      console.log(`✅ ${successCount}/${files.length} documents uploadés`)
 
       return results
     } catch (error) {
-      console.error('❌ Erreur upload documents:', error)
       throw error
     }
   }
@@ -104,19 +113,15 @@ export function DocumentsProvider({ children }) {
     try {
       await documentsApi.deleteDocument(id)
 
-      // Refetch manuellement
       await refetch()
 
-      // Si le document supprimé était sélectionné, en sélectionner un autre
       if (selectedDocumentId === id) {
         const remainingDocs = documents.filter(doc => doc.id !== id)
         setSelectedDocumentId(remainingDocs[0]?.id || null)
         setSelectedPageNumber(1)
       }
 
-      console.log('✅ Document supprimé')
     } catch (error) {
-      console.error('❌ Erreur suppression document:', error)
       throw error
     }
   }
@@ -161,7 +166,6 @@ export function DocumentsProvider({ children }) {
             const [removed] = pages.splice(oldIndex, 1)
             pages.splice(newIndex, 0, removed)
 
-            // Mettre à jour les numéros de page
             return {
               ...doc,
               pages: pages.map((page, index) => ({
@@ -175,7 +179,6 @@ export function DocumentsProvider({ children }) {
       }
     })
 
-    // Mettre à jour la page sélectionnée si nécessaire
     if (selectedPageNumber === oldIndex + 1) {
       setSelectedPageNumber(newIndex + 1)
     } else if (selectedPageNumber === newIndex + 1) {
@@ -184,14 +187,95 @@ export function DocumentsProvider({ children }) {
   }
 
   /**
-   * Obtenir toutes les pages de tous les documents sous forme de liste plate
-   * Chaque page a un identifiant unique composé de: documentId-pageNumber
+   * Mettre à jour l'URL d'une page après rognage
    */
+  const updatePageUrl = (documentId, pageNumber, newUrl) => {
+    // Mettre à jour le document dans le cache
+    queryClient.setQueryData(['documents', 'list'], (old) => {
+      if (!old) return old
+
+      const updated = {
+        ...old,
+        documents: old.documents.map(doc => {
+          if (doc.id === documentId) {
+            // Si le document a déjà des pages, mettre à jour la page spécifique
+            if (doc.pages) {
+              const updated = {
+                ...doc,
+                pages: doc.pages.map(page =>
+                  page.pageNumber === pageNumber
+                    ? { ...page, url: newUrl }
+                    : page
+                )
+              }
+              return updated
+            }
+            // Si le document n'a pas de pages mais a plusieurs pages (multipages PDF)
+            // On crée une structure de pages pour ne pas affecter les autres pages
+            else if (doc.numPages && doc.numPages > 1) {
+              // Créer un tableau de pages avec l'URL rognée pour cette page spécifique
+              const pages = Array.from({ length: doc.numPages }, (_, i) => ({
+                pageNumber: i + 1,
+                url: i + 1 === pageNumber ? newUrl : doc.url,
+                originalPageNumber: i + 1
+              }))
+
+              const updated = {
+                ...doc,
+                pages: pages
+              }
+              return updated
+            }
+            // Pour un document d'une seule page, on peut mettre à jour l'URL du document
+            else if (pageNumber === 1) {
+              const updated = {
+                ...doc,
+                url: newUrl
+              }
+              return updated
+            }
+          }
+          return doc
+        })
+      }
+
+      return updated
+    })
+
+    // Mettre à jour aussi orderedPages pour que la sidebar se mette à jour immédiatement
+    setOrderedPages(prev => {
+      return prev.map(page => {
+        // Trouver les pages qui appartiennent à ce document et à ce numéro de page
+        const pageId = `${documentId}-${pageNumber - 1}`
+        if (page.id === pageId || (page.documentId === documentId && page.pageNumber === pageNumber)) {
+          return { ...page, url: newUrl }
+        }
+        return page
+      })
+    })
+
+    // Forcer le re-render de tous les composants qui utilisent les documents
+    setDocumentVersion(prev => prev + 1)
+  }
   const allPages = documents.flatMap(doc => {
-    const docPages = doc.pages || Array.from({ length: doc.numPages || 1 }, (_, i) => ({
-      pageNumber: i + 1,
-      url: doc.url
-    }))
+    // Si le document a des pages, les utiliser en normalisant les URLs
+    const docPages = doc.pages
+      ? doc.pages.map(page => {
+          let pageUrl = page.url
+          // Ensure URL is complete (add base URL if relative)
+          if (pageUrl && pageUrl.startsWith('/')) {
+            pageUrl = `${API_BASE_URL}${pageUrl}`
+          }
+          return {
+            ...page,
+            url: pageUrl
+          }
+        })
+      : Array.from({ length: doc.numPages || 1 }, (_, i) => ({
+          pageNumber: i + 1,
+          url: doc.url,  // doc.url is already normalized
+          originalPageNumber: i + 1
+        }))
     return docPages.map((page, index) => ({
       ...page,
       id: `${doc.id}-${index}`,
@@ -201,54 +285,28 @@ export function DocumentsProvider({ children }) {
     }))
   })
 
-  // Ref pour suivre les pages déjà vues dans la session
-
-  // Connexion WebSocket pour les mises à jour temps réel
   const { eventEmitter } = useWebSocket()
 
   useEffect(() => {
     if (!eventEmitter) return
+  }, [eventEmitter])
 
-    const handleDocumentUploaded = (data) => {
-      console.log('📡 WebSocket: Document uploaded', data)
-      refetch()
-    }
-
-    eventEmitter.on('document_uploaded', handleDocumentUploaded)
-
-    return () => {
-      eventEmitter.off('document_uploaded', handleDocumentUploaded)
-    }
-  }, [eventEmitter, refetch])
-
-  // Logique de persistance de session (déplacée depuis useOrganizePages)
-  // Avec enabled:false sur la query, il n'y aura pas de documents au démarrage
-  // On détecte simplement les uploads
   useEffect(() => {
     if (isLoading) return
 
-    // Détecter les nouvelles pages (Upload uniquement, car pas de documents au démarrage)
     const newPages = allPages.filter(p => !seenPageIdsRef.current.has(p.id))
 
     if (newPages.length > 0) {
-      console.log('✨ New pages uploaded:', newPages.length)
-
-      // Ajouter aux pages vues
       newPages.forEach(p => seenPageIdsRef.current.add(p.id))
 
-      // Ajouter à la liste "À classer"
       setOrderedPages(prev => [...prev, ...newPages])
 
-      // Mettre à jour le cache query
       queryClient.setQueryData(['organize', 'orderedPages'], (old) => {
         return old ? [...old, ...newPages] : [...newPages]
       })
     }
   }, [allPages, isLoading, queryClient])
 
-  /**
-   * Sélectionner une page spécifique (par son ID unique)
-   */
   const selectPageById = (pageId) => {
     const [docId, pageIndex] = pageId.split('-').map(Number)
     const doc = documents.find(d => d.id === docId)
@@ -258,19 +316,44 @@ export function DocumentsProvider({ children }) {
     }
   }
 
-  // Page sélectionnée actuelle (avec ID unique)
   const selectedPageId = selectedDocumentId
     ? `${selectedDocumentId}-${(selectedPageNumber || 1) - 1}`
     : null
 
-  // Document sélectionné
-  const selectedDocument = documents.find(doc => doc.id === selectedDocumentId)
+  // Utiliser useMemo pour forcer le recalcul de selectedDocument quand documentVersion change
+  // IMPORTANT: Lire directement depuis le cache au lieu de 'documents' pour éviter les données stalles
+  const selectedDocument = useMemo(() => {
+    // Lire depuis le cache mis à jour
+    const cachedData = queryClient.getQueryData(['documents', 'list'])
+    const cachedDocs = cachedData?.documents || []
+
+    // Normaliser les documents comme dans la ligne 33
+    const normalizedDocs = cachedDocs.map(doc => {
+      let docUrl = doc.url || `${API_BASE_URL}/uploads/${doc.filename}`
+      if (docUrl.startsWith('/')) {
+        docUrl = `${API_BASE_URL}${docUrl}`
+      }
+
+      return {
+        ...doc,
+        name: doc.original_name || doc.name,
+        type: doc.file_type || doc.type,
+        url: docUrl,
+        createdAt: doc.created_at || doc.createdAt
+      }
+    })
+
+    return normalizedDocs.find(doc => doc.id === selectedDocumentId)
+  }, [selectedDocumentId, documentVersion, queryClient])
 
   const value = {
     documents,
     allPages,
     selectedPageId,
-    setDocuments: (docs) => queryClient.setQueryData(['documents', 'list'], { documents: docs, total: docs.length }),
+    setDocuments: (docs) => {
+      const docsToSet = typeof docs === 'function' ? docs(documentsData?.documents || []) : docs
+      queryClient.setQueryData(['documents', 'list'], { documents: docsToSet, total: docsToSet.length })
+    },
     selectedDocument,
     selectedDocumentId,
     selectedPageNumber,
@@ -283,13 +366,15 @@ export function DocumentsProvider({ children }) {
     clearDocuments,
     updateDocumentNumPages,
     reorderPages,
+    updatePageUrl,
     orderedPages,
     setOrderedPages,
     classifiedPages,
     setClassifiedPages,
     isLoading,
     error,
-    seenPageIdsRef, // Exposer pour useOrganizePages
+    seenPageIdsRef,
+    documentVersion,
   }
 
   return <DocumentsContext.Provider value={value}>{children}</DocumentsContext.Provider>

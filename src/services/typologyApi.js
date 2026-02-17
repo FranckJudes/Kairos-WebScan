@@ -101,5 +101,22 @@ export const typologyApi = {
       throw new Error('Failed to initialize typology')
     }
     return response.json()
+  },
+
+  /**
+   * Crée un nouveau nœud de typologie
+   */
+  async createNode(data) {
+    const response = await fetch(`${API_BASE_URL}/typology/nodes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+    if (!response.ok) {
+      throw new Error('Failed to create typology node')
+    }
+    return response.json()
   }
 }

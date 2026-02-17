@@ -181,4 +181,38 @@ export const api = {
     }
     return response.json()
   },
+
+  // Upload une image rognée
+  async uploadCroppedImage(canvas, filename) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          reject(new Error('Failed to create blob'))
+          return
+        }
+
+        const file = new File([blob], filename, { type: 'image/jpeg' })
+        const formData = new FormData()
+        formData.append('file', file)
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/documents/upload`, {
+            method: 'POST',
+            body: formData,
+          })
+
+          if (!response.ok) {
+            throw new Error('Failed to upload cropped image')
+          }
+
+          const result = await response.json()
+          // Retourner l'URL complète du fichier uploadé
+          const fileUrl = result.document?.url || result.url || `${API_BASE_URL}/uploads/${result.document?.filename || result.filename}`
+          resolve(fileUrl.startsWith('/') ? `${API_BASE_URL}${fileUrl}` : fileUrl)
+        } catch (error) {
+          reject(error)
+        }
+      }, 'image/jpeg', 0.95)
+    })
+  },
 }

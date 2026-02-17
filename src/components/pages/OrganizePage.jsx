@@ -1,6 +1,9 @@
-import { useState, useRef, Suspense } from 'react'
+import { useState, useRef, Suspense, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Document, Page, pdfjs } from 'react-pdf'
+import { ZoomIn, ZoomOut, RotateCw, X, Trash2, ArrowLeft, FolderTree, RotateCcw, Save, CheckCircle2, Loader2, Crop } from 'lucide-react'
+import { Cropper } from 'react-cropper'
+import 'cropperjs/dist/cropper.css'
 import {
   DndContext,
   closestCenter,
@@ -10,7 +13,6 @@ import {
   useSensors,
 } from '@dnd-kit/core'
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
@@ -23,20 +25,163 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useOrganizePages } from '../../hooks/useOrganizePages'
 import { useClassifiedPages } from '../../hooks/useClassifiedPages'
 import toast from 'react-hot-toast'
+import { api } from '../../services/api'
 
-// Configuration de PDF.js
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
 
+function DeleteConfirmationModal({ isOpen, onClose, onConfirm, pageCount }) {
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white dark:bg-dark-bgSecondary rounded-lg p-6 max-w-sm w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+            <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-[#605e5c] dark:text-dark-text">Supprimer les pages</h3>
+        </div>
+        <p className="text-sm text-[#605e5c] dark:text-dark-text mb-6">
+          Êtes-vous sûr de vouloir supprimer {pageCount} page{pageCount > 1 ? 's' : ''} ?
+        </p>
+        <div className="flex gap-3 justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg border border-[#edebe9] dark:border-dark-border text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors"
+          >
+            Annuler
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 dark:bg-red-700 dark:hover:bg-red-600 text-white transition-colors"
+          >
+            Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Composant Modal pour visualiser une page en grand
-function PageModal({ page, onClose }) {
+function PageModal({ page, onClose, rotatePage, updatePageUrl }) {
   const [scale, setScale] = useState(1)
-  const isMobile = useMobile()
+  const [rotation, setRotation] = useState(page.rotation || 0)
+  const [isCropMode, setIsCropMode] = useState(false)
+  const cropperRef = useRef(null)
+  const [pdfImageDataUrl, setPdfImageDataUrl] = useState(null) // Pour stocker l'image convertie du PDF
+  const [isConvertingPdf, setIsConvertingPdf] = useState(false)
+
+  // Synchroniser la rotation quand page.rotation change
+  useEffect(() => {
+    setRotation(page.rotation || 0)
+  }, [page.rotation])
 
   const zoomIn = () => setScale((prev) => Math.min(prev + 0.25, 3))
   const zoomOut = () => setScale((prev) => Math.max(prev - 0.25, 0.5))
   const resetZoom = () => setScale(1)
+  const handleRotate = () => {
+    const newRotation = (rotation + 90) % 360
+    setRotation(newRotation)
+    rotatePage(page.id, newRotation)
+  }
 
-  const isPdf = page.type === 'application/pdf' && !page.url.includes('/api/WiaScanner/image')
+  const startCrop = async () => {
+    // Si c'est un PDF, on doit d'abord le convertir en image
+    if (isPdf) {
+      setIsConvertingPdf(true)
+      toast.loading('Conversion du PDF en image...')
+
+      try {
+        // Charger le document PDF
+        const loadingTask = pdfjs.getDocument(page.url)
+        const pdf = await loadingTask.promise
+
+        // Récupérer la page
+        const pdfPage = await pdf.getPage(page.pageNumber)
+
+        // Calculer les dimensions avec le scale actuel
+        const viewport = pdfPage.getViewport({ scale: scale * 2 }) // Échelle plus haute pour meilleure qualité
+
+        // Créer un canvas
+        const canvas = document.createElement('canvas')
+        const context = canvas.getContext('2d')
+        canvas.height = viewport.height
+        canvas.width = viewport.width
+
+        // Rendre la page dans le canvas
+        await pdfPage.render({ canvasContext: context, viewport: viewport }).promise
+
+        // Convertir le canvas en data URL
+        const imageDataUrl = canvas.toDataURL('image/jpeg', 0.95)
+        setPdfImageDataUrl(imageDataUrl)
+        setIsCropMode(true)
+
+        toast.dismiss()
+        toast.success('PDF converti - Vous pouvez maintenant rogner')
+      } catch (error) {
+        console.error('Erreur lors de la conversion du PDF:', error)
+        toast.dismiss()
+        toast.error('Erreur lors de la conversion du PDF')
+      } finally {
+        setIsConvertingPdf(false)
+      }
+    } else {
+      // Pour les images, on active simplement le mode rognage
+      setIsCropMode(true)
+    }
+  }
+
+  const cancelCrop = () => {
+    setIsCropMode(false)
+    setPdfImageDataUrl(null) // Nettoyer l'image convertie du PDF
+  }
+
+  const applyCrop = async () => {
+    const cropper = cropperRef.current?.cropper
+    if (!cropper) {
+      toast.error('Veuillez sélectionner une zone à rogner')
+      return
+    }
+
+    try {
+      // Get cropped canvas
+      const canvas = cropper.getCroppedCanvas({
+        maxWidth: 4096,
+        maxHeight: 4096,
+        fillColor: '#fff',
+        imageSmoothingEnabled: true,
+        imageSmoothingQuality: 'high',
+      })
+
+      if (!canvas) {
+        toast.error('Erreur lors de la création de l\'image rognée')
+        return
+      }
+
+      // Uploader l'image rognée au serveur
+      toast.loading('Upload de l\'image rognée...', { id: 'crop-upload' })
+
+      const filename = `${page.documentName}_page_${page.pageNumber}_cropped_${Date.now()}.jpg`
+      const uploadedUrl = await api.uploadCroppedImage(canvas, filename)
+
+      // Mettre à jour l'URL de la page avec l'URL uploadée
+      updatePageUrl(page.id, uploadedUrl)
+
+      toast.dismiss('crop-upload')
+      toast.success('Image rognée appliquée')
+      setIsCropMode(false)
+      setPdfImageDataUrl(null)
+    } catch (error) {
+      console.error('Erreur lors du rognage:', error)
+      toast.dismiss('crop-upload')
+      toast.error('Erreur lors du rognage')
+    }
+  }
+
+  // Vérifier si c'est un PDF (attention : une page rognée devient une image data URL)
+  const isPdf = page.url && !page.url.startsWith('data:image') && page.url.toLowerCase().endsWith('.pdf') && !page.url.includes('/api/WiaScanner/image')
+  const canCrop = true // Le rognage est disponible pour tous les types de fichiers
 
   return (
     <div
@@ -47,40 +192,189 @@ function PageModal({ page, onClose }) {
         className="relative w-[95vw] md:max-w-[90vw] max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="bg-white dark:bg-dark-bgSecondary rounded-t-lg p-2 md:p-3 flex flex-col md:flex-row md:items-center justify-between shadow-lg gap-2 transition-colors duration-200">
-          <div className="flex items-center space-x-2 md:space-x-3 min-w-0">
-            <h3 className="text-xs md:text-sm font-semibold text-[#605e5c] dark:text-dark-text truncate">{page.documentName}</h3>
-            <span className="text-[9px] md:text-[10px] text-[#c8c6c4] dark:text-dark-textTertiary bg-[#f3f2f1] dark:bg-dark-bgTertiary px-2 py-0.5 rounded-full whitespace-nowrap">
-              Pg {page.pageNumber}
-            </span>
+        {/* Header avec actions */}
+        <div className="sticky top-0 z-10 bg-white/95 dark:bg-dark-bg/95 backdrop-blur-sm border-b border-[#edebe9] dark:border-dark-border px-4 py-2 shadow-sm rounded-t-lg">
+          <div className="flex items-center justify-between max-w-6xl mx-auto">
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2">
+                <h3 className="text-xs md:text-sm font-semibold text-[#605e5c] dark:text-dark-text truncate max-w-[150px] md:max-w-md">{page.documentName}</h3>
+                <span className="text-[9px] md:text-[10px] text-[#c8c6c4] dark:text-dark-textTertiary bg-[#f3f2f1] dark:bg-dark-bgTertiary px-2 py-0.5 rounded-full whitespace-nowrap">
+                  Pg {page.pageNumber}
+                </span>
+              </div>
+              <div className="h-4 w-px bg-[#edebe9] dark:border-dark-border"></div>
+            </div>
+
+            <div className="flex items-center space-x-1 md:space-x-2">
+              {/* Zoom controls */}
+              <div className="flex items-center space-x-1 bg-[#f3f2f1] dark:bg-dark-bgTertiary rounded-lg p-1">
+                <button
+                  onClick={zoomOut}
+                  disabled={scale <= 0.5}
+                  className="p-2 rounded hover:bg-white dark:hover:bg-dark-bg hover:shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Zoom arrière"
+                >
+                  <ZoomOut className="w-[20px] h-[20px] text-[#605e5c] dark:text-dark-text" />
+                </button>
+                <button
+                  onClick={resetZoom}
+                  className="p-2 rounded hover:bg-white dark:hover:bg-dark-bg hover:shadow-sm transition-all text-xs font-medium text-[#605e5c] dark:text-dark-text min-w-[50px] text-center"
+                  title="Réinitialiser zoom"
+                >
+                  {Math.round(scale * 100)}%
+                </button>
+                <button
+                  onClick={zoomIn}
+                  disabled={scale >= 3}
+                  className="p-2 rounded hover:bg-white dark:hover:bg-dark-bg hover:shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Zoom avant"
+                >
+                  <ZoomIn className="w-[20px] h-[20px] text-[#605e5c] dark:text-dark-text" />
+                </button>
+              </div>
+
+              <div className="h-6 w-px bg-[#edebe9] dark:border-dark-border hidden sm:block"></div>
+
+              {/* Rotation */}
+              <div className="flex items-center space-x-1 bg-[#f3f2f1] dark:bg-dark-bgTertiary rounded-lg p-1">
+                <button
+                  onClick={() => {
+                    const newRotation = (rotation - 90) % 360
+                    setRotation(newRotation)
+                    rotatePage(page.id, newRotation)
+                  }}
+                  className="p-2 rounded hover:bg-white dark:hover:bg-dark-bg hover:shadow-sm transition-all"
+                  title="Rotation gauche (-90°)"
+                >
+                  <RotateCcw className="w-[20px] h-[20px] text-[#605e5c] dark:text-dark-text" />
+                </button>
+                <button
+                  onClick={() => {
+                    setRotation(0)
+                    rotatePage(page.id, 0)
+                  }}
+                  disabled={rotation === 0}
+                  className="p-2 rounded hover:bg-white dark:hover:bg-dark-bg hover:shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed text-xs font-medium text-[#605e5c] dark:text-dark-text min-w-[50px] text-center"
+                  title="Réinitialiser rotation"
+                >
+                  {rotation}°
+                </button>
+                <button
+                  onClick={handleRotate}
+                  className="p-2 rounded hover:bg-white dark:hover:bg-dark-bg hover:shadow-sm transition-all"
+                  title="Rotation droite (+90°)"
+                >
+                  <RotateCw className="w-[20px] h-[20px] text-[#605e5c] dark:text-dark-text" />
+                </button>
+              </div>
+
+              <div className="h-6 w-px bg-[#edebe9] dark:border-dark-border hidden sm:block"></div>
+
+              {/* Rogner - disponible pour tous les types de fichiers */}
+              {canCrop && !isConvertingPdf && (
+                isCropMode ? (
+                  <>
+                    {/* Annuler le rognage */}
+                    <button
+                      onClick={cancelCrop}
+                      className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 transition-all"
+                      title="Annuler le rognage"
+                    >
+                      <Crop className="w-[20px] h-[20px]" />
+                    </button>
+
+                    {/* Appliquer le rognage */}
+                    <button
+                      onClick={applyCrop}
+                      className="p-2 rounded-lg bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-600 hover:shadow-sm transition-all flex items-center space-x-1"
+                      title="Appliquer le rognage"
+                    >
+                      <span className="material-symbols-outlined text-[20px] text-white">check</span>
+                      <span className="hidden md:inline text-xs font-medium text-white">Appliquer</span>
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={startCrop}
+                    className="p-2 rounded-lg bg-[#f3f2f1] dark:bg-dark-bgTertiary hover:bg-white dark:hover:bg-dark-bg hover:shadow-sm transition-all text-[#605e5c] dark:text-dark-text flex items-center space-x-1"
+                    title={isPdf ? "Rogner (conversion PDF requise)" : "Rogner la page"}
+                  >
+                    <Crop className="w-[20px] h-[20px]" />
+                    <span className="hidden md:inline text-xs font-medium">Rogner</span>
+                  </button>
+                )
+              )}
+
+              {/* Indicateur de conversion PDF */}
+              {isConvertingPdf && (
+                <div className="p-2">
+                  <Loader2 className="w-[20px] h-[20px] text-[#106EBE] dark:text-blue-400 animate-spin" />
+                </div>
+              )}
+
+              <button
+                onClick={onClose}
+                className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 hover:shadow-sm transition-all"
+                title="Fermer"
+              >
+                <X className="w-[20px] h-[20px]" />
+              </button>
+            </div>
           </div>
-          <div className="flex items-center justify-between md:justify-end gap-1 md:gap-2 overflow-x-auto">
-            {isPdf && (
-              <>
-                <button onClick={zoomOut} disabled={scale <= 0.5} className="p-1.5 md:p-1 rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover disabled:opacity-40 disabled:cursor-not-allowed min-w-[44px] min-h-[44px] flex items-center justify-center" title="Zoom arrière">
-                  <span className="material-symbols-outlined text-[20px] md:text-[18px]">zoom_out</span>
-                </button>
-                <span className="text-[10px] text-[#605e5c] dark:text-dark-text min-w-[40px] md:min-w-[45px] text-center">{Math.round(scale * 100)}%</span>
-                <button onClick={zoomIn} disabled={scale >= 3} className="p-1.5 md:p-1 rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover disabled:opacity-40 disabled:cursor-not-allowed min-w-[44px] min-h-[44px] flex items-center justify-center" title="Zoom avant">
-                  <span className="material-symbols-outlined text-[20px] md:text-[18px]">zoom_in</span>
-                </button>
-                <button onClick={resetZoom} className="px-2 md:px-2 py-1 md:py-0.5 text-[10px] bg-white dark:bg-dark-bg border border-[#edebe9] dark:border-dark-border rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover min-w-[44px] min-h-[44px] flex items-center justify-center">
-                  Reset
-                </button>
-              </>
-            )}
-            <button onClick={onClose} className="ml-0 md:ml-2 p-1.5 md:p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 min-w-[44px] min-h-[44px] flex items-center justify-center" title="Fermer">
-              <span className="material-symbols-outlined text-[20px] md:text-[18px]">close</span>
-            </button>
-          </div>
+
+          {/* Crop mode indicator */}
+          {isCropMode && (
+            <div className="mt-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center space-x-2">
+              <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-[18px]">info</span>
+              <span className="text-xs text-amber-800 dark:text-amber-200">
+                Mode rognage activé - Ajustez la zone de rognage et cliquez sur Appliquer
+              </span>
+            </div>
+          )}
         </div>
-        <div className="bg-gray-100 dark:bg-dark-bg rounded-b-lg p-2 md:p-4 overflow-auto flex items-center justify-center" style={{ maxHeight: 'calc(90vh - 70px)' }}>
-          {isPdf ? (
-            <Document file={page.url} loading={<div className="flex items-center justify-center"><span className="material-symbols-outlined text-4xl text-gray-400 dark:text-dark-textTertiary animate-spin">progress_activity</span></div>}>
-              <Page pageNumber={page.pageNumber} scale={scale} renderTextLayer={false} renderAnnotationLayer={false} />
-            </Document>
+
+        {/* Contenu */}
+        <div className="bg-gray-100 dark:bg-dark-bg rounded-b-lg p-2 md:p-4 overflow-auto flex items-center justify-center relative" style={{ maxHeight: 'calc(90vh - 70px)' }}>
+          {isConvertingPdf ? (
+            <div className="flex flex-col items-center justify-center">
+              <Loader2 className="w-12 h-12 text-[#106EBE] dark:text-blue-400 animate-spin mb-4" />
+              <p className="text-sm text-[#605e5c] dark:text-dark-text">Conversion du PDF en image...</p>
+            </div>
+          ) : isPdf && !isCropMode ? (
+            <div
+              className="transition-transform duration-300"
+              style={{
+                transform: `rotate(${rotation}deg)`,
+                transformOrigin: 'center'
+              }}
+            >
+              <Document file={page.url} loading={<div className="flex items-center justify-center"><Loader2 className="w-10 h-10 text-gray-400 dark:text-dark-textTertiary animate-spin" /></div>}>
+                <Page pageNumber={page.pageNumber} scale={scale} renderTextLayer={false} renderAnnotationLayer={false} />
+              </Document>
+            </div>
+          ) : isCropMode ? (
+            <Cropper
+              ref={cropperRef}
+              src={isPdf ? pdfImageDataUrl : page.url}
+              style={{ height: '70vh', width: '100%' }}
+              initialAspectRatio={NaN}
+              guides={true}
+              viewMode={1}
+              minCropBoxWidth={100}
+              minCropBoxHeight={100}
+              autoCropArea={1}
+              checkOrientation={false}
+              cropBoxMovable={true}
+              cropBoxResizable={true}
+              dragMode="move"
+            />
           ) : (
-            <img src={page.url} alt={`${page.documentName} - Page ${page.pageNumber}`} className="max-w-full max-h-full object-contain" style={{ transform: `scale(${scale})`, transformOrigin: 'center' }} />
+            <div
+              className="relative"
+              style={{ transform: `scale(${scale}) rotate(${rotation}deg)`, transformOrigin: 'center', transition: 'transform 0.3s ease-in-out' }}
+            >
+              <img src={page.url} alt={`${page.documentName} - Page ${page.pageNumber}`} className="max-w-full max-h-full object-contain" />
+            </div>
           )}
         </div>
       </div>
@@ -88,27 +382,14 @@ function PageModal({ page, onClose }) {
   )
 }
 
-// Composant pour afficher la miniature d'une page PDF
-function PDFThumbnail({ url, pageNumber }) {
-  const [numPages, setNumPages] = useState(null)
-
-  const onLoadSuccess = ({ numPages }) => {
-    setNumPages(numPages)
-  }
-
-  return (
-    <div className="w-full h-full flex items-center justify-center bg-[#f3f2f1]">
-      <Document file={url} onLoadSuccess={onLoadSuccess} loading={<div className="w-full h-full flex items-center justify-center"><span className="material-symbols-outlined text-2xl text-gray-400 animate-spin">progress_activity</span></div>}>
-        <Page pageNumber={pageNumber} width={150} renderTextLayer={false} renderAnnotationLayer={false} className="flex items-center justify-center" />
-      </Document>
-    </div>
-  )
-}
-
-// Composant SortablePage pour une page avec drag & drop
 function SortablePage({ page, index, removePage, rotatePage, onClick, isSelected, onToggleSelect }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: page.id })
-  const [rotation, setRotation] = useState(0)
+  const [rotation, setRotation] = useState(page.rotation || 0)
+
+  // Synchroniser la rotation quand page.rotation change
+  useEffect(() => {
+    setRotation(page.rotation || 0)
+  }, [page.rotation])
 
   const handleRotate = () => {
     const newRotation = (rotation + 90) % 360
@@ -128,16 +409,23 @@ function SortablePage({ page, index, removePage, rotatePage, onClick, isSelected
       </div>
       <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
         <button onClick={handleRotate} className="bg-[#f3f2f1] dark:bg-dark-bgTertiary hover:bg-[#106EBE] dark:hover:bg-blue-500 hover:text-white text-[#605e5c] dark:text-dark-text p-1.5 rounded shadow-sm transition-colors" title="Rotation 90°">
-          <span className="material-symbols-outlined text-[14px]">rotate_right</span>
+          <RotateCw className="w-[14px] h-[14px]" />
         </button>
         <button onClick={() => removePage(page.id)} className="bg-red-100 dark:bg-red-900/30 hover:bg-red-500 dark:hover:bg-red-600 text-red-600 dark:text-red-400 hover:text-white p-1.5 rounded shadow-sm transition-colors" title="Supprimer">
-          <span className="material-symbols-outlined text-[14px]">delete</span>
+          <Trash2 className="w-[14px] h-[14px]" />
         </button>
       </div>
       <div className="p-3">
         <div className="aspect-[3/4] bg-[#f3f2f1] dark:bg-dark-bgTertiary rounded-lg mb-2 overflow-hidden relative cursor-pointer hover:bg-[#e1dfdd] dark:hover:bg-dark-hover transition-colors" onClick={onClick}>
-          {page.type === 'application/pdf' && !page.url.includes('/api/WiaScanner/image') ? (
-            <PDFThumbnail url={page.url} pageNumber={page.pageNumber} />
+          {page.url && page.url.toLowerCase().endsWith('.pdf') && !page.url.includes('/api/WiaScanner/image') ? (
+            <div className="w-full h-full flex items-center justify-center">
+              <Document
+                file={page.url}
+                loading={<div className="w-full h-full flex items-center justify-center"><Loader2 className="w-6 h-6 text-gray-400 dark:text-dark-textTertiary animate-spin" /></div>}
+              >
+                <Page pageNumber={page.pageNumber} scale={0.2} renderTextLayer={false} renderAnnotationLayer={false} className="max-w-full max-h-full" />
+              </Document>
+            </div>
           ) : (
             <img src={page.url} alt={page.documentName} className="w-full h-full object-cover transition-transform duration-300" style={{ transform: `rotate(${rotation}deg)`, transformOrigin: 'center' }} />
           )}
@@ -145,22 +433,21 @@ function SortablePage({ page, index, removePage, rotatePage, onClick, isSelected
             <span className="material-symbols-outlined text-white dark:text-dark-text text-3xl drop-shadow-lg">zoom_in</span>
           </div>
         </div>
-        <div className="space-y-1 pointer-events-none">
-          <h3 className="text-[10px] font-medium text-[#605e5c] dark:text-dark-text truncate" title={page.documentName}>{page.documentName}</h3>
-          <div className="flex items-center justify-between text-[9px] text-[#c8c6c4] dark:text-dark-textTertiary">
-            <span>Page {page.pageNumber}</span>
-            <span>{(page.size / 1024).toFixed(0)} KB</span>
-          </div>
-        </div>
       </div>
       <div className="absolute top-1/2 -right-1 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-move bg-white dark:bg-dark-bgSecondary rounded-l shadow-md p-1" {...attributes} {...listeners}>
-        <span className="material-symbols-outlined text-[#605e5c] dark:text-dark-text text-xl">drag_indicator</span>
+        <svg className="w-5 h-5 text-[#605e5c] dark:text-dark-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="9" cy="5" r="1" />
+          <circle cx="9" cy="12" r="1" />
+          <circle cx="9" cy="19" r="1" />
+          <circle cx="15" cy="5" r="1" />
+          <circle cx="15" cy="12" r="1" />
+          <circle cx="15" cy="19" r="1" />
+        </svg>
       </div>
     </div>
   )
 }
 
-// Composant de grille virtualisée
 function GridVirtualizer({ parentRef, orderedPages, columnsCount, removePage, rotatePage, setSelectedPage, selectedPageIds, togglePageSelection }) {
   const rowVirtualizer = useVirtualizer({
     count: Math.ceil(orderedPages.length / columnsCount),
@@ -213,7 +500,6 @@ function OrganizePage() {
   const isMobile = useMobile()
   const gridParentRef = useRef(null)
 
-  // Utiliser nos hooks optimisés avec TanStack Query
   const {
     orderedPages,
     isLoading,
@@ -224,22 +510,21 @@ function OrganizePage() {
     reorderPages,
     addPages,
     rotatePage,
+    updatePageUrl,
   } = useOrganizePages()
 
-  // États locaux UI seulement
   const [selectedPage, setSelectedPage] = useState(null)
   const [selectedPageIds, setSelectedPageIds] = useState(new Set())
   const [selectedTreeNode, setSelectedTreeNode] = useState(null)
   const [viewingNode, setViewingNode] = useState(null)
   const [showTypology, setShowTypology] = useState(false)
   const [classifiedPages, setClassifiedPages] = useState({})
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   const { classifyPages, reinsertPages, deleteInstances } = useClassifiedPages(setClassifiedPages)
 
-  // Capteurs pour le drag & drop
   const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }))
 
-  // Configuration du nombre de colonnes
   const getColumnsCount = () => {
     if (typeof window === 'undefined') return 6
     const width = window.innerWidth
@@ -253,7 +538,6 @@ function OrganizePage() {
 
   const columnsCount = getColumnsCount()
 
-  // Gestion du drag & drop
   const handleDragEnd = (event) => {
     const { active, over } = event
     if (over && active.id !== over.id) {
@@ -264,25 +548,28 @@ function OrganizePage() {
   }
 
   // Toggle sélection
-  const togglePageSelection = (pageId) => setSelectedPageIds((prev) => {
-    const newSet = new Set(prev)
+  const togglePageSelection = (pageId) => setSelectedPageIds((current) => {
+    const newSet = new Set(current)
     if (newSet.has(pageId)) newSet.delete(pageId)
     else newSet.add(pageId)
     return newSet
   })
 
   // Sélectionner tout
-  const toggleSelectAll = () => setSelectedPageIds((prev) =>
+  const toggleSelectAll = () => setSelectedPageIds(() =>
     selectedPageIds.size === orderedPages.length ? new Set() : new Set(orderedPages.map((p) => p.id))
   )
 
   // Supprimer les pages sélectionnées
   const deleteSelectedPages = () => {
     if (selectedPageIds.size === 0) return
-    if (confirm(`Supprimer ${selectedPageIds.size} page(s) sélectionnée(s) ?`)) {
-      removePages(selectedPageIds)
-      setSelectedPageIds(new Set())
-    }
+    setShowDeleteModal(true)
+  }
+
+  const confirmDeletePages = () => {
+    removePages(selectedPageIds)
+    setSelectedPageIds(new Set())
+    setShowDeleteModal(false)
   }
 
   // Classer les pages sélectionnées
@@ -327,8 +614,6 @@ function OrganizePage() {
 
   // Enregistrer
   const validateOrder = () => {
-    console.log('Classification terminée:', classifiedPages)
-    console.log('Pages restantes:', orderedPages)
     toast.success('Classification enregistrée !')
   }
 
@@ -338,7 +623,7 @@ function OrganizePage() {
       <div className="flex flex-col h-full bg-[#f3f2f1] dark:bg-dark-bg transition-colors duration-200">
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <span className="material-symbols-outlined text-5xl text-[#106EBE] dark:text-blue-400 animate-spin mb-4">progress_activity</span>
+            <Loader2 className="w-12 h-12 text-[#106EBE] dark:text-blue-400 animate-spin mb-4" />
             <p className="text-lg text-[#605e5c] dark:text-dark-text">Chargement des pages...</p>
           </div>
         </div>
@@ -353,7 +638,7 @@ function OrganizePage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-0">
           <div className="flex items-center space-x-2 md:space-x-4 min-w-0">
             <button onClick={() => navigate(-1)} className="flex items-center space-x-1 md:space-x-2 text-[#605e5c] dark:text-dark-text hover:text-[#106EBE] dark:hover:text-blue-400 transition-colors min-w-[44px] min-h-[44px]">
-              <span className="material-symbols-outlined">arrow_back</span>
+              <ArrowLeft className="w-5 h-5" />
               <span className="font-medium text-xs md:text-sm hidden sm:inline">Retour</span>
             </button>
             <div className="h-6 w-px bg-[#edebe9] dark:bg-dark-border hidden md:block"></div>
@@ -364,33 +649,36 @@ function OrganizePage() {
           </div>
           <div className="flex items-center justify-between md:justify-end gap-2 overflow-x-auto">
             <button onClick={() => setShowTypology(!showTypology)} className="md:hidden bg-[#106EBE] dark:bg-blue-600 hover:bg-[#005a9e] dark:hover:bg-blue-700 text-white px-3 py-2 rounded shadow flex items-center space-x-1 transition-all text-xs font-medium min-w-[44px] min-h-[44px]">
-              <span className="material-symbols-outlined text-[18px]">account_tree</span>
+              <FolderTree className="w-[18px] h-[18px]" />
               <span>{showTypology ? 'Grille' : 'Arbre'}</span>
             </button>
             <span className="text-xs md:text-sm text-[#605e5c] dark:text-dark-text whitespace-nowrap">{orderedPages.length} pg{orderedPages.length > 1 ? 's' : ''}</span>
 
-            {/* Indicateur WebSocket */}
-            <div className="flex items-center space-x-1 px-2 py-1 rounded-full bg-[#f3f2f1] dark:bg-dark-bgTertiary" title={isWebSocketConnected ? 'WebSocket connecté - Synchronisation temps réel active' : 'WebSocket déconnecté'}>
-              <span className={`w-2 h-2 rounded-full ${isWebSocketConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
-              <span className="text-[10px] text-[#605e5c] dark:text-dark-text hidden md:inline">{isWebSocketConnected ? 'Sync' : 'Offline'}</span>
-            </div>
             <label className="flex items-center space-x-1 md:space-x-2 cursor-pointer shrink-0">
-              <input type="checkbox" checked={selectedPageIds.size === orderedPages.length && orderedPages.length > 0} onChange={toggleSelectAll} className="w-4 h-4 md:w-4 md:h-4 rounded border-2 border-[#c8c6c4] dark:border-dark-borderLight text-[#106EBE] dark:text-blue-500 focus:ring-[#106EBE] dark:focus:ring-blue-500 focus:ring-2" />
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  checked={selectedPageIds.size === orderedPages.length && orderedPages.length > 0}
+                  onChange={toggleSelectAll}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-[#edebe9] dark:bg-dark-bgTertiary peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#106EBE] dark:peer-focus:ring-blue-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:after:border-gray-600 peer-checked:bg-[#106EBE] dark:peer-checked:bg-blue-500"></div>
+              </div>
               <span className="text-xs text-[#605e5c] dark:text-dark-text whitespace-nowrap">{selectedPageIds.size > 0 ? `${selectedPageIds.size} sel.` : 'Tout'}</span>
             </label>
             {selectedPageIds.size > 0 && (
               <button onClick={deleteSelectedPages} className="bg-red-500 hover:bg-red-600 dark:bg-red-700 dark:hover:bg-red-600 text-white px-2 md:px-4 py-2 rounded shadow flex items-center space-x-1 md:space-x-2 transition-all font-medium min-w-[44px] min-h-[44px]">
-                <span className="material-symbols-outlined text-[18px]">delete</span>
+                <Trash2 className="w-[18px] h-[18px]" />
                 <span className="hidden sm:inline">Suppr.</span>
                 <span className="hidden xs:inline">({selectedPageIds.size})</span>
               </button>
             )}
             <button onClick={resetOrder} className="bg-gray-200 hover:bg-gray-300 dark:bg-dark-bgTertiary dark:hover:bg-dark-hover text-[#605e5c] dark:text-dark-text px-2 md:px-4 py-2 rounded shadow flex items-center space-x-1 md:space-x-2 transition-all font-medium min-w-[44px] min-h-[44px]" disabled={orderedPages.length === 0}>
-              <span className="material-symbols-outlined text-[18px]">refresh</span>
+              <RotateCcw className="w-[18px] h-[18px]" />
               <span className="hidden sm:inline">Réinit.</span>
             </button>
             <button onClick={validateOrder} className="bg-[#106EBE] hover:bg-[#005a9e] dark:bg-blue-600 dark:hover:bg-blue-700 text-white px-3 md:px-6 py-2 rounded shadow-lg flex items-center space-x-1 md:space-x-2 transition-all font-medium min-w-[44px] min-h-[44px]">
-              <span className="material-symbols-outlined text-[18px]">save</span>
+              <Save className="w-[18px] h-[18px]" />
               <span className="hidden sm:inline">Enregistrer</span>
             </button>
           </div>
@@ -402,7 +690,7 @@ function OrganizePage() {
         <div ref={gridParentRef} className={`flex-1 overflow-auto p-3 md:p-6 custom-scrollbar ${isMobile && showTypology ? 'hidden' : ''}`}>
           {orderedPages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
-              <span className="material-symbols-outlined text-[60px] md:text-[80px] text-[#c8c6c4] dark:text-dark-textTertiary mb-4">check_circle</span>
+              <CheckCircle2 className="w-[60px] h-[60px] md:w-[80px] md:h-[80px] text-[#c8c6c4] dark:text-dark-textTertiary mb-4" />
               <h2 className="text-lg md:text-xl font-semibold text-[#605e5c] dark:text-dark-text mb-2">Toutes les pages sont classées !</h2>
               <p className="text-sm text-[#605e5c] dark:text-dark-text">Sélectionnez un dossier pour voir les pages classées</p>
             </div>
@@ -430,7 +718,7 @@ function OrganizePage() {
             <div className="p-2 bg-[#faf9f8] dark:bg-dark-bgSecondary border-b border-[#edebe9] dark:border-dark-border flex items-center justify-between transition-colors duration-200">
               <span className="text-xs font-semibold text-[#605e5c] dark:text-dark-text">Arbre de typologie</span>
               <button onClick={() => setShowTypology(false)} className="p-1 rounded hover:bg-[#e1dfdd] dark:hover:bg-dark-hover text-[#605e5c] dark:text-dark-text min-w-[44px] min-h-[44px] flex items-center justify-center">
-                <span className="material-symbols-outlined">close</span>
+                <X className="w-5 h-5" />
               </button>
             </div>
           )}
@@ -453,7 +741,15 @@ function OrganizePage() {
       </div>
 
       {/* Modal de visualisation */}
-      {selectedPage && <PageModal page={selectedPage} onClose={() => setSelectedPage(null)} />}
+      {selectedPage && <PageModal page={selectedPage} onClose={() => setSelectedPage(null)} rotatePage={rotatePage} updatePageUrl={updatePageUrl} />}
+
+      {/* Modal de confirmation de suppression */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDeletePages}
+        pageCount={selectedPageIds.size}
+      />
 
       {/* Modal des pages classées - placeholder pour l'instant */}
       {viewingNode && (
