@@ -14,7 +14,7 @@ import { api } from '../../services/api'
 
 function DocumentViewer() {
   const navigate = useNavigate()
-  const { selectedDocument, addDocuments, selectedPageNumber, updateDocumentNumPages, updatePageUrl, documentVersion } = useDocuments()
+  const { selectedDocument, addDocuments, selectedPageNumber, updateDocumentNumPages, updatePageUrl, documentVersion, clearDocuments } = useDocuments()
   const { orderedPages } = useOrganizePages()
   const { createBannette, isCreating } = useBannettes()
   const [scale, setScale] = useState(1.0)
@@ -221,6 +221,11 @@ function DocumentViewer() {
     }
   }
 
+  const handleClear = () => {
+    clearDocuments()
+    toast.success('Tous les documents ont été supprimés')
+  }
+
   if (!selectedDocument) {
     return (
       <main className="flex-1 relative overflow-auto p-4 md:p-12 flex justify-center items-center custom-scrollbar">
@@ -290,6 +295,13 @@ function DocumentViewer() {
             >
               <span className="material-symbols-outlined text-[18px] md:text-[18px]">save</span>
               <span className="hidden sm:inline">Enregistrer</span>
+            </button>
+            <button
+              onClick={handleClear}
+              className="bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-600 text-white px-3 md:px-4 py-2 rounded shadow-lg flex items-center space-x-1 md:space-x-2 transition-all text-xs md:text-sm font-medium min-w-[44px] min-h-[44px]"
+            >
+              <span className="material-symbols-outlined text-[18px] md:text-[18px]">delete</span>
+              <span className="hidden sm:inline">Vider</span>
             </button>
           </div>
         </div>
@@ -501,7 +513,7 @@ function DocumentViewer() {
                     <img
                       src={currentPageUrl}
                       alt={`${selectedDocument.name} - Page ${selectedPageNumber}`}
-                      className="w-full h-auto object-contain"
+                      className="w-auto h-auto object-contain"
                       style={{ transform: `scale(${scale})`, transformOrigin: 'top center' }}
                     />
 
