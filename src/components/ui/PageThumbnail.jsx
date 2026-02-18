@@ -6,8 +6,6 @@ pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.vers
 function PageThumbnail({ url, pageNumber, originalPageNumber, isSelected, onClick, isPdf, hasCheckbox }) {
   const [pageDimensions, setPageDimensions] = useState(null)
 
-  // Pour les PDFs avec pages (après suppression), utiliser originalPageNumber
-  // Pour les PDFs sans pages (document original), utiliser pageNumber
   const displayPageNumber = isPdf && originalPageNumber !== undefined && originalPageNumber !== pageNumber ? originalPageNumber : pageNumber
   const labelPageNumber = pageNumber // Pour l'affichage du numéro, utiliser le numéro logique
 

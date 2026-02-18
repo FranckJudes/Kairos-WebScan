@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 from typing import List
+from datetime import datetime, timezone
 
-from ..database import get_db
-from ..models.models import ScanProfile
+from ..models.mongo_models import ScanProfile
 from ..models.schemas import ScanProfileCreate, ScanProfileUpdate, ScanProfileResponse
 
 router = APIRouter(
@@ -14,31 +13,31 @@ router = APIRouter(
 
 # GET tous les profils de scan
 @router.get("/", response_model=List[ScanProfileResponse])
-def get_scan_profiles(db: Session = Depends(get_db)):
+async def get_scan_profiles():
     """Récupérer tous les profils de scan"""
-    profiles = db.query(ScanProfile).all()
-    return [ScanProfileResponse.from_orm(profile) for profile in profiles]
+    profiles = await ScanProfile.find_all().to_list()
+    return [_profile_to_response(profile) for profile in profiles]
 
 
 # GET un profil de scan par ID
 @router.get("/{profile_id}", response_model=ScanProfileResponse)
-def get_scan_profile(profile_id: int, db: Session = Depends(get_db)):
+async def get_scan_profile(profile_id: str):
     """Récupérer un profil de scan par son ID"""
-    profile = db.query(ScanProfile).filter(ScanProfile.id == profile_id).first()
+    profile = await ScanProfile.get(profile_id)
     if not profile:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Profil de scan avec ID {profile_id} non trouvé"
         )
-    return ScanProfileResponse.from_orm(profile)
+    return _profile_to_response(profile)
 
 
 # POST créer un nouveau profil de scan
 @router.post("/", response_model=ScanProfileResponse, status_code=status.HTTP_201_CREATED)
-def create_scan_profile(profile_data: ScanProfileCreate, db: Session = Depends(get_db)):
+async def create_scan_profile(profile_data: ScanProfileCreate):
     """Créer un nouveau profil de scan"""
     # Vérifier si le libélé existe déjà
-    existing_profile = db.query(ScanProfile).filter(ScanProfile.libele == profile_data.libele).first()
+    existing_profile = await ScanProfile.find_one(ScanProfile.libele == profile_data.libele)
     if existing_profile:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -47,7 +46,7 @@ def create_scan_profile(profile_data: ScanProfileCreate, db: Session = Depends(g
 
     # Si c'est le profil par défaut, retirer le défaut aux autres
     if profile_data.default == "1":
-        db.query(ScanProfile).filter(ScanProfile.default == "1").update({"default": "0"})
+        await ScanProfile.find_many(ScanProfile.default == "1").update({"$set": {"default": "0"}})
 
     # Créer le nouveau profil
     new_profile = ScanProfile(
@@ -63,22 +62,18 @@ def create_scan_profile(profile_data: ScanProfileCreate, db: Session = Depends(g
         default=profile_data.default.value
     )
 
-    db.add(new_profile)
-    db.commit()
-    db.refresh(new_profile)
-
-    return ScanProfileResponse.from_orm(new_profile)
+    await new_profile.insert()
+    return _profile_to_response(new_profile)
 
 
 # PUT mettre à jour un profil de scan
 @router.put("/{profile_id}", response_model=ScanProfileResponse)
-def update_scan_profile(
-    profile_id: int,
-    profile_data: ScanProfileUpdate,
-    db: Session = Depends(get_db)
+async def update_scan_profile(
+    profile_id: str,
+    profile_data: ScanProfileUpdate
 ):
     """Mettre à jour un profil de scan"""
-    profile = db.query(ScanProfile).filter(ScanProfile.id == profile_id).first()
+    profile = await ScanProfile.get(profile_id)
     if not profile:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -87,7 +82,7 @@ def update_scan_profile(
 
     # Vérifier si le nouveau libélé existe déjà (si on change le nom)
     if profile_data.libele and profile_data.libele != profile.libele:
-        existing_profile = db.query(ScanProfile).filter(ScanProfile.libele == profile_data.libele).first()
+        existing_profile = await ScanProfile.find_one(ScanProfile.libele == profile_data.libele)
         if existing_profile:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -96,7 +91,10 @@ def update_scan_profile(
 
     # Si c'est le nouveau profil par défaut, retirer le défaut aux autres
     if profile_data.default and profile_data.default == "1":
-        db.query(ScanProfile).filter(ScanProfile.default == "1", ScanProfile.id != profile_id).update({"default": "0"})
+        await ScanProfile.find_many({
+            ScanProfile.default == "1",
+            ScanProfile.id != profile_id
+        }).update({"$set": {"default": "0"}})
 
     # Mettre à jour les champs
     update_data = profile_data.model_dump(exclude_unset=True)
@@ -106,24 +104,40 @@ def update_scan_profile(
             value = value.value
         setattr(profile, key, value)
 
-    db.commit()
-    db.refresh(profile)
+    profile.updated_at = datetime.now(timezone.utc)
+    await profile.save()
 
-    return ScanProfileResponse.from_orm(profile)
+    return _profile_to_response(profile)
 
 
 # DELETE supprimer un profil de scan
 @router.delete("/{profile_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_scan_profile(profile_id: int, db: Session = Depends(get_db)):
+async def delete_scan_profile(profile_id: str):
     """Supprimer un profil de scan"""
-    profile = db.query(ScanProfile).filter(ScanProfile.id == profile_id).first()
+    profile = await ScanProfile.get(profile_id)
     if not profile:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Profil de scan avec ID {profile_id} non trouvé"
         )
 
-    db.delete(profile)
-    db.commit()
-
+    await profile.delete()
     return None
+
+
+def _profile_to_response(profile: ScanProfile) -> ScanProfileResponse:
+    """Convertit un modèle ScanProfile en Response"""
+    return ScanProfileResponse(
+        id=str(profile.id),
+        libele=profile.libele,
+        paper_size=profile.paper_size,
+        horizontal_align=profile.horizontal_align,
+        resolution=profile.resolution,
+        scale=profile.scale,
+        brightness=profile.brightness,
+        brithness=profile.brightness,
+        contrast=profile.contrast,
+        blank_page=profile.blank_page,
+        sensibility=profile.sensibility,
+        default=profile.default
+    )

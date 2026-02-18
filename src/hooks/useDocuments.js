@@ -18,34 +18,29 @@ export function useDocument(id) {
   })
 }
 
-// Custom hook to upload a document
 export function useUploadDocument() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: api.uploadDocument,
     onSuccess: () => {
-      // Invalidate and refetch documents query
       queryClient.invalidateQueries({ queryKey: ['documents'] })
     },
   })
 }
 
-// Custom hook to start scanning
 export function useStartScan() {
   return useMutation({
     mutationFn: api.startScan,
   })
 }
 
-// Custom hook to perform OCR
 export function usePerformOcr() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: ({ documentId, config }) => api.performOcr(documentId, config),
     onSuccess: (_, variables) => {
-      // Invalidate the specific document query
       queryClient.invalidateQueries({ queryKey: ['documents', variables.documentId] })
     },
   })

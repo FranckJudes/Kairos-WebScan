@@ -20,16 +20,7 @@ async def websocket_endpoint(
 
     Se connecter à: ws://localhost:8000/ws
 
-    Events reçus:
-        - pages_classified: Des pages ont été classées dans une typologie
-        - pages_reinserted: Des pages classées ont été réinsérées
-        - instance_deleted: Une instance de classification a été supprimée
-        - typology_updated: La typologie a été modifiée
-        - scan_profile_updated: Un profil de scan a été modifié
-        - document_scanned: Un nouveau document a été scanné
-        - thumbnail_generated: Un thumbnail a été généré
-        - batch_update: Mise à jour groupée
-
+   
     Exemple de message reçu:
         {
             "type": "pages_classified",
@@ -60,22 +51,17 @@ async def websocket_endpoint(
             }
         })
 
-        # Garder la connexion ouverte et écouter les messages du client
         while True:
-            # Recevoir les messages du client (ping, etc.)
             try:
                 data = await websocket.receive_json()
 
-                # Répondre aux pings
                 if data.get("type") == "ping":
                     await websocket.send_json({
                         "type": "pong",
                         "data": {"timestamp": data.get("timestamp")}
                     })
 
-                # Autres types de messages du client peuvent être gérés ici
                 elif data.get("type") == "subscribe":
-                    # S'abonner à des événements spécifiques (pour extension future)
                     await websocket.send_json({
                         "type": "subscribed",
                         "data": {"events": data.get("events", "all")}
@@ -86,7 +72,6 @@ async def websocket_endpoint(
                 break
             except Exception as e:
                 logger.error(f"Erreur lors de la réception du message: {e}")
-                # Envoyer une erreur mais garder la connexion ouverte
                 try:
                     await websocket.send_json({
                         "type": "error",

@@ -21,7 +21,6 @@ export const useScanProfiles = () => {
     staleTime: 1000 * 60 * 5,
   })
 
-  // Créer un profil
   const createProfile = useMutation({
     mutationFn: (profile) => api.createScanProfile(profile),
     onSuccess: () => {
@@ -29,7 +28,6 @@ export const useScanProfiles = () => {
     },
   })
 
-  // Mettre à jour un profil
   const updateProfile = useMutation({
     mutationFn: ({ id, profile }) => api.updateScanProfile(id, profile),
     onSuccess: () => {
@@ -37,7 +35,6 @@ export const useScanProfiles = () => {
     },
   })
 
-  // Supprimer un profil
   const deleteProfile = useMutation({
     mutationFn: (id) => api.deleteScanProfile(id),
     onSuccess: () => {

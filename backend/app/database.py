@@ -1,31 +1,64 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+"""
+Configuration de la base de données MongoDB avec Motor et Beanie ODM
+"""
 import os
+from motor.motor_asyncio import AsyncIOMotorClient
+from beanie import init_beanie
 from dotenv import load_dotenv
+from typing import AsyncGenerator
 
 load_dotenv()
 
-# Database URL - SQLite par défaut pour le développement
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./kairos_webscan.db")
+MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017/kairos_webscan")
 
-# Créer le moteur de base de données
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
-)
-
-# Créer la session locale
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Base déclarative pour les modèles
-Base = declarative_base()
+client: AsyncIOMotorClient = None
 
 
-# Dépendance pour obtenir la session de base de données
-def get_db():
-    db = SessionLocal()
+async def connect_to_mongo():
+    """
+    Établit la connexion à MongoDB et initialise Beanie
+    """
+    global client
+
+    client = AsyncIOMotorClient(MONGODB_URL)
+    await init_beanie(
+        database=client.get_default_database(),
+        document_models=[]
+    )
+
     try:
-        yield db
-    finally:
-        db.close()
+        await client.admin.command('ping')
+    except Exception as e:
+        raise
+
+
+async def close_mongo_connection():
+    """
+    Ferme la connexion à MongoDB
+    """
+    global client
+    if client:
+        client.close()
+
+
+async def get_database():
+    """
+    Retourne l'instance de la base de données
+
+    Returns:
+        Database: Instance MongoDB
+    """
+    if not client:
+        await connect_to_mongo()
+
+    return client.get_default_database()
+
+
+def get_mongo_client():
+    """
+    Retourne le client MongoDB
+
+    Returns:
+        AsyncIOMotorClient: Client MongoDB
+    """
+    return client

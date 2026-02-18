@@ -45,7 +45,6 @@ export const scanApi = {
       const data = await response.json()
       return data
     } catch (error) {
-      console.error('Error fetching scanners:', error)
       throw error
     }
   },
@@ -69,7 +68,6 @@ export const scanApi = {
       const data = await response.json()
       return data
     } catch (error) {
-      console.error('Error scanning:', error)
       throw error
     }
   },

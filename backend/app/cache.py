@@ -35,10 +35,7 @@ class CacheManager:
             )
             # Tester la connexion
             self.redis.ping()
-            logger.info(f"✅ Connecté à Redis ({host}:{port})")
         except RedisError as e:
-            logger.warning(f"⚠️ Impossible de se connecter à Redis: {e}")
-            logger.warning("⚠️ Le cache sera désactivé")
             self.redis = None
 
     def is_available(self) -> bool:
@@ -66,7 +63,6 @@ class CacheManager:
         try:
             data = self.redis.get("typology:tree")
             if data:
-                logger.debug("✅ Typology tree récupérée depuis le cache")
                 return json.loads(data)
         except (RedisError, json.JSONDecodeError) as e:
             logger.error(f"❌ Erreur lors de la récupération du cache typology: {e}")
@@ -89,10 +85,8 @@ class CacheManager:
 
         try:
             self.redis.setex("typology:tree", ttl, json.dumps(data))
-            logger.debug("✅ Typology tree mise en cache")
             return True
         except (RedisError, json.JSONDecodeError) as e:
-            logger.error(f"❌ Erreur lors de la mise en cache typology: {e}")
             return False
 
     def invalidate_typology(self) -> bool:
@@ -107,10 +101,8 @@ class CacheManager:
 
         try:
             self.redis.delete("typology:tree")
-            logger.info("🗑️ Cache typology invalidé")
             return True
         except RedisError as e:
-            logger.error(f"❌ Erreur lors de l'invalidation du cache typology: {e}")
             return False
 
     # ========== Scan Profiles Cache ==========
@@ -128,7 +120,6 @@ class CacheManager:
         try:
             data = self.redis.get("scan_profiles:list")
             if data:
-                logger.debug("✅ Scan profiles récupérés depuis le cache")
                 return json.loads(data)
         except (RedisError, json.JSONDecodeError) as e:
             logger.error(f"❌ Erreur lors de la récupération du cache scan profiles: {e}")
@@ -151,10 +142,8 @@ class CacheManager:
 
         try:
             self.redis.setex("scan_profiles:list", ttl, json.dumps(data))
-            logger.debug("✅ Scan profiles mis en cache")
             return True
         except (RedisError, json.JSONDecodeError) as e:
-            logger.error(f"❌ Erreur lors de la mise en cache scan profiles: {e}")
             return False
 
     def invalidate_scan_profiles(self) -> bool:
@@ -169,13 +158,10 @@ class CacheManager:
 
         try:
             self.redis.delete("scan_profiles:list")
-            logger.info("🗑️ Cache scan profiles invalidé")
             return True
         except RedisError as e:
-            logger.error(f"❌ Erreur lors de l'invalidation du cache scan profiles: {e}")
             return False
 
-    # ========== Thumbnails Cache ==========
 
     def get_thumbnail(self, doc_id: int, page_num: int) -> Optional[str]:
         """
@@ -195,7 +181,6 @@ class CacheManager:
             key = f"thumbnail:{doc_id}:{page_num}"
             data = self.redis.get(key)
             if data:
-                logger.debug(f"✅ Thumbnail {doc_id}:{page_num} récupéré depuis le cache")
                 return data
         except RedisError as e:
             logger.error(f"❌ Erreur lors de la récupération du cache thumbnail: {e}")
@@ -221,10 +206,8 @@ class CacheManager:
         try:
             key = f"thumbnail:{doc_id}:{page_num}"
             self.redis.setex(key, ttl, image_data)
-            logger.debug(f"✅ Thumbnail {doc_id}:{page_num} mis en cache")
             return True
         except RedisError as e:
-            logger.error(f"❌ Erreur lors de la mise en cache thumbnail: {e}")
             return False
 
     def invalidate_document_thumbnails(self, doc_id: int) -> bool:
@@ -245,10 +228,8 @@ class CacheManager:
             keys = self.redis.keys(pattern)
             if keys:
                 self.redis.delete(*keys)
-                logger.info(f"🗑️ {len(keys)} thumbnails invalidés pour le document {doc_id}")
             return True
         except RedisError as e:
-            logger.error(f"❌ Erreur lors de l'invalidation des thumbnails: {e}")
             return False
 
     # ========== Generic Cache Methods ==========
@@ -327,10 +308,8 @@ class CacheManager:
 
         try:
             self.redis.flushdb()
-            logger.warning("🗑️ Tout le cache a été vidé")
             return True
         except RedisError as e:
-            logger.error(f"❌ Erreur lors du vidage du cache: {e}")
             return False
 
 

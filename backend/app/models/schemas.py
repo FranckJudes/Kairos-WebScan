@@ -1,5 +1,7 @@
-from pydantic import BaseModel, Field
-from typing import Optional
+from pydantic import BaseModel, Field, ConfigDict
+from pydantic.alias_generators import to_camel
+from typing import Optional, List, Dict, Any
+from datetime import datetime
 from enum import Enum
 
 
@@ -43,27 +45,39 @@ class ScanProfileUpdate(BaseModel):
 
 # Schema pour la réponse API (avec tous les champs)
 class ScanProfileResponse(ScanProfileCreate):
-    id: int
+    id: str  # MongoDB ObjectId
     brithness: Optional[int] = None  # Pour compatibilité avec l'ancien nom
 
-    class Config:
-        from_attributes = True
 
-    @classmethod
-    def from_orm(cls, obj):
-        # Convertir l'objet SQLAlchemy en dictionnaire
-        data = {
-            "id": obj.id,
-            "libele": obj.libele,
-            "paper_size": obj.paper_size,
-            "horizontal_align": obj.horizontal_align,
-            "resolution": obj.resolution,
-            "scale": obj.scale,
-            "brightness": obj.brightness,
-            "contrast": obj.contrast,
-            "blank_page": obj.blank_page,
-            "sensibility": obj.sensibility,
-            "default": obj.default,
-            "brithness": obj.brightness,  # Pour compatibilité avec le frontend qui utilise 'brithness'
-        }
-        return cls(**data)
+class DocumentResponse(BaseModel):
+    """Schéma pour la réponse d'un document"""
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+    
+    id: str
+    filename: str
+    original_name: str
+    mime_type: str
+    size_bytes: int
+    document_type: str
+    status: str
+    url: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class BannetteCreate(BaseModel):
+    """Schéma pour créer une bannette"""
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+    
+    name: str
+    description: Optional[str] = None
+    pages_order: List[Dict[str, Any]] = []
+    classified_pages: Dict[str, Any] = {}
+    total_pages: int = 0
+
+
+class BannetteResponse(BannetteCreate):
+    """Schéma pour la réponse d'une bannette"""
+    id: str
+    created_at: datetime
+    updated_at: datetime

@@ -27,7 +27,6 @@ export const typologyApi = {
         state: { opened: true } // Ouvrir les dossiers par défaut
       }
 
-      // Si c'est un parent, ajouter la propriété children
       if (hasChildren) {
         node.children = true // Dit à jstree que c'est un dossier
       }
@@ -41,7 +40,6 @@ export const typologyApi = {
    */
   convertToJsTreeFormat(types) {
     return types.map(type => {
-      // Déterminer si ce nœud a des enfants
       const hasChildren = types.some(t => t.parent_id === type.id)
 
       const node = {
@@ -51,7 +49,6 @@ export const typologyApi = {
         state: { opened: true } // Ouvrir les dossiers par défaut
       }
 
-      // Si c'est un parent, ajouter la propriété children
       if (hasChildren) {
         node.children = true // Dit à jstree que c'est un dossier
       }
@@ -75,7 +72,6 @@ export const typologyApi = {
       })
     })
 
-    // Construire l'arbre hiérarchique
     const rootNodes = []
     types.forEach(type => {
       const node = typeMap.get(type.id)

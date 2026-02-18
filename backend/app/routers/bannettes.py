@@ -1,163 +1,100 @@
-"""
-API pour la gestion des bannettes (sauvegarde d'état)
-"""
-from fastapi import APIRouter, HTTPException, Depends, Body
-from sqlalchemy.orm import Session
-from typing import List, Optional
-import logging
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import datetime, timezone
 
-from ..database import get_db
-from ..models.classification import Bannette
+from ..models.mongo_models import BannetteModel, User
+from ..models.schemas import BannetteCreate, BannetteResponse
+from .auth import get_current_user_active
 
-logger = logging.getLogger(__name__)
+router = APIRouter(
+    prefix="/bannettes",
+    tags=["Bannettes"]
+)
 
-router = APIRouter(prefix="/bannettes", tags=["Bannettes"])
+def _bannette_to_response(bannette: BannetteModel) -> BannetteResponse:
+    """Convertit un modèle BannetteModel en BannetteResponse"""
+    return BannetteResponse(
+        id=str(bannette.id),
+        name=bannette.name,
+        description=bannette.description,
+        pages_order=bannette.pages_order,
+        classified_pages=bannette.classified_pages,
+        total_pages=bannette.total_pages,
+        created_at=bannette.created_at,
+        updated_at=bannette.updated_at
+    )
 
-
-@router.get("/")
+@router.get("/", response_model=List[BannetteResponse])
 async def list_bannettes(
-    skip: int = 0,
-    limit: int = 50,
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user_active)
 ):
-    """
-    Liste toutes les bannettes
+    """Liste toutes les bannettes de l'utilisateur"""
+    bannettes = await BannetteModel.find(
+        BannetteModel.user_id == str(current_user.id)
+    ).sort("-updated_at").to_list()
+    
+    return [_bannette_to_response(b) for b in bannettes]
 
-    Returns:
-        Liste des bannettes avec pagination
-    """
-    total = db.query(Bannette).count()
-    bannettes = db.query(Bannette).order_by(Bannette.updated_at.desc()).offset(skip).limit(limit).all()
-
-    return {
-        "total": total,
-        "skip": skip,
-        "limit": limit,
-        "bannettes": [b.to_dict() for b in bannettes]
-    }
-
-
-@router.get("/{bannette_id}")
-async def get_bannette(
-    bannette_id: int,
-    db: Session = Depends(get_db)
-):
-    """
-    Récupère une bannette par ID
-
-    Returns:
-        Détails de la bannette
-    """
-    bannette = db.query(Bannette).filter(Bannette.id == bannette_id).first()
-    if not bannette:
-        raise HTTPException(status_code=404, detail="Bannette not found")
-
-    return bannette.to_dict()
-
-
-@router.post("/")
+@router.post("/", response_model=BannetteResponse)
 async def create_bannette(
-    data: dict = Body(...),
-    db: Session = Depends(get_db)
+    data: BannetteCreate,
+    current_user: User = Depends(get_current_user_active)
 ):
-    """
-    Crée une nouvelle bannette
+    """Crée une nouvelle bannette"""
+    bannette = BannetteModel(
+        user_id=str(current_user.id),
+        name=data.name,
+        description=data.description,
+        pages_order=data.pages_order,
+        classified_pages=data.classified_pages,
+        total_pages=data.total_pages
+    )
+    await bannette.insert()
+    return _bannette_to_response(bannette)
 
-    Body:
-        name: Nom de la bannette
-        description: Description (optionnel)
-        pages_order: Liste des pages ordonnées
-        classified_pages: Pages classées
-        total_pages: Nombre total de pages
+@router.get("/{bannette_id}", response_model=BannetteResponse)
+async def get_bannette(
+    bannette_id: str,
+    current_user: User = Depends(get_current_user_active)
+):
+    """Récupère les détails d'une bannette"""
+    bannette = await BannetteModel.get(bannette_id)
+    if not bannette or bannette.user_id != str(current_user.id):
+        raise HTTPException(status_code=404, detail="Bannette non trouvée")
+    
+    return _bannette_to_response(bannette)
 
-    Returns:
-        Bannette créée
-    """
-    try:
-        bannette = Bannette(
-            name=data.get("name", "Sans nom"),
-            description=data.get("description"),
-            pages_order=data.get("pages_order", []),
-            classified_pages=data.get("classified_pages", {}),
-            total_pages=data.get("total_pages", 0)
-        )
-
-        db.add(bannette)
-        db.commit()
-        db.refresh(bannette)
-
-        logger.info(f"✅ Bannette créée: {bannette.id} - {bannette.name}")
-        return bannette.to_dict()
-
-    except Exception as e:
-        logger.error(f"❌ Erreur création bannette: {e}")
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.put("/{bannette_id}")
+@router.put("/{bannette_id}", response_model=BannetteResponse)
 async def update_bannette(
-    bannette_id: int,
-    data: dict = Body(...),
-    db: Session = Depends(get_db)
+    bannette_id: str,
+    data: BannetteCreate,
+    current_user: User = Depends(get_current_user_active)
 ):
-    """
-    Met à jour une bannette
-
-    Returns:
-        Bannette mise à jour
-    """
-    bannette = db.query(Bannette).filter(Bannette.id == bannette_id).first()
-    if not bannette:
-        raise HTTPException(status_code=404, detail="Bannette not found")
-
-    try:
-        if "name" in data:
-            bannette.name = data["name"]
-        if "description" in data:
-            bannette.description = data["description"]
-        if "pages_order" in data:
-            bannette.pages_order = data["pages_order"]
-        if "classified_pages" in data:
-            bannette.classified_pages = data["classified_pages"]
-        if "total_pages" in data:
-            bannette.total_pages = data["total_pages"]
-
-        db.commit()
-        db.refresh(bannette)
-
-        logger.info(f"✅ Bannette mise à jour: {bannette.id}")
-        return bannette.to_dict()
-
-    except Exception as e:
-        logger.error(f"❌ Erreur mise à jour bannette: {e}")
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-
+    """Met à jour une bannette existante"""
+    bannette = await BannetteModel.get(bannette_id)
+    if not bannette or bannette.user_id != str(current_user.id):
+        raise HTTPException(status_code=404, detail="Bannette non trouvée")
+    
+    # Mise à jour des champs
+    bannette.name = data.name
+    bannette.description = data.description
+    bannette.pages_order = data.pages_order
+    bannette.classified_pages = data.classified_pages
+    bannette.total_pages = data.total_pages
+    bannette.updated_at = datetime.now(timezone.utc)
+    
+    await bannette.save()
+    return _bannette_to_response(bannette)
 
 @router.delete("/{bannette_id}")
 async def delete_bannette(
-    bannette_id: int,
-    db: Session = Depends(get_db)
+    bannette_id: str,
+    current_user: User = Depends(get_current_user_active)
 ):
-    """
-    Supprime une bannette
-
-    Returns:
-        Confirmation de suppression
-    """
-    bannette = db.query(Bannette).filter(Bannette.id == bannette_id).first()
-    if not bannette:
-        raise HTTPException(status_code=404, detail="Bannette not found")
-
-    try:
-        db.delete(bannette)
-        db.commit()
-
-        logger.info(f"✅ Bannette supprimée: {bannette_id}")
-        return {"message": "Bannette deleted", "bannette_id": bannette_id}
-
-    except Exception as e:
-        logger.error(f"❌ Erreur suppression bannette: {e}")
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+    """Supprime une bannette"""
+    bannette = await BannetteModel.get(bannette_id)
+    if not bannette or bannette.user_id != str(current_user.id):
+        raise HTTPException(status_code=404, detail="Bannette non trouvée")
+    
+    await bannette.delete()
+    return {"message": "Bannette supprimée avec succès"}

@@ -73,10 +73,6 @@ function Sidebar() {
   // Delete selected pages
   const handleDeleteSelected = () => {
     if (selectedPageIds.size === 0) return
-
-    console.log('🗑️ Deleting pages:', Array.from(selectedPageIds))
-
-    // Group pages by document using their originalPageNumber (stable identifier)
     const pagesByDocument = {}
     const documentsWithAllPagesDeleted = []
 
@@ -91,53 +87,39 @@ function Sidebar() {
       }
     })
 
-    // Check which documents will have all pages deleted
-    console.log('🔍 Checking documents for complete deletion...')
-    console.log('📋 pagesByDocument:', pagesByDocument)
-    console.log('📚 Current documents:', documents.map(d => ({ id: d.id, name: d.name, numPages: d.numPages, pagesLength: d.pages?.length })))
 
     Object.keys(pagesByDocument).forEach(docId => {
       const doc = documents.find(d => d.id === parseInt(docId))
-      console.log(`  🔎 Checking docId: ${docId}, found doc:`, doc)
       if (doc) {
         const totalDocPages = doc.pages?.length || doc.numPages || 1
         const pagesToDelete = pagesByDocument[docId].length
-        console.log(`     - Total pages: ${totalDocPages}, Pages to delete: ${pagesToDelete}`)
         if (totalDocPages === pagesToDelete) {
-          console.log(`     ✅ Document ${doc.id} will be completely deleted`)
           documentsWithAllPagesDeleted.push(parseInt(docId))
         }
       }
     })
 
-    console.log('📄 Documents that will be completely deleted:', documentsWithAllPagesDeleted)
 
-    // Update documents by removing selected pages
     setDocuments(prevDocs => {
       return prevDocs.map(doc => {
         const originalPageNumbersToRemove = pagesByDocument[doc.id]
         if (!originalPageNumbersToRemove || originalPageNumbersToRemove.length === 0) return doc
 
-        // Get existing pages or create them from numPages
         const existingPages = doc.pages || Array.from({ length: doc.numPages || 1 }, (_, i) => ({
           pageNumber: i + 1,
           url: doc.url,
           originalPageNumber: i + 1
         }))
 
-        // Filter out the pages to remove by their originalPageNumber
         const filteredPages = existingPages.filter(page => !originalPageNumbersToRemove.includes(page.originalPageNumber))
 
-        // If document has no more pages, return null to mark for removal
         if (filteredPages.length === 0) {
-          console.log('❌ Document', doc.id, 'will be deleted (no more pages)')
           return null
         }
 
         return {
           ...doc,
           pages: filteredPages.map((page, index) => {
-            // Ensure URL is complete (add base URL if relative)
             let pageUrl = page.url
             if (pageUrl && pageUrl.startsWith('/')) {
               pageUrl = `${API_BASE_URL}${pageUrl}`
@@ -155,19 +137,16 @@ function Sidebar() {
       }).filter(Boolean)
     })
 
-    // Clear selection immediately
     setSelectedPageIds(new Set())
 
     toast.success(`${selectedPageIds.size} page(s) supprimée(s)`)
   }
 
-  // Update pages order when documents change
   useEffect(() => {
     const order = allPages.map(page => page.id)
     setPagesOrder(order)
   }, [documents])
 
-  // Auto-select a new page if the selected page was deleted
   usePageSelectionAfterDeletion(
     allPages,
     selectedPageId,

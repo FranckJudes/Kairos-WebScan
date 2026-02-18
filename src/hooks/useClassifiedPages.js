@@ -12,19 +12,13 @@ export const useClassifiedPages = (setStateCallback) => {
 
   const queryClient = useQueryClient()
 
-  // Mutation pour classer des pages
   const classifyPages = useMutation({
     mutationFn: ({ nodeId, nodeName, pages }) => classificationApi.classify(nodeId, nodeName, pages),
     onSuccess: (data) => {
-      // Invalider le cache pour forcer le rafraîchissement
       queryClient.invalidateQueries({ queryKey: ['classification', 'pages'] })
 
       if (!setStateCallback) return
 
-      // Mise à jour optimiste ou basée sur la réponse du serveur
-      // La structure de réponse doit correspondre à ce qu'on attend
-      // Pour l'instant, on garde la logique de mise à jour locale en attendant que le backend soit prêt
-      // Si le backend renvoie la nouvelle structure complète, on pourrait l'utiliser directement
 
       setStateCallback((prev = {}) => {
         const nodeId = data.nodeId || data.node_id
@@ -33,17 +27,14 @@ export const useClassifiedPages = (setStateCallback) => {
         const currentNodeData = prev[nodeId] || {}
         const newNodeData = {}
 
-        // Copier les entrées existantes
         Object.keys(currentNodeData).forEach(docName => {
           newNodeData[docName] = [...currentNodeData[docName]]
         })
 
-        // Créer le tableau si n'existe pas
         if (!newNodeData[nodeName]) {
           newNodeData[nodeName] = []
         }
 
-        // Ajouter la nouvelle instance retournée par le backend
         if (data.instance) {
           newNodeData[nodeName] = [...newNodeData[nodeName], data.instance]
         }
@@ -56,7 +47,6 @@ export const useClassifiedPages = (setStateCallback) => {
     }
   })
 
-  // Mutation pour réinsérer des pages
   const reinsertPages = useMutation({
     mutationFn: ({ nodeId, instanceId }) => classificationApi.reinsert(instanceId),
     onSuccess: (data, variables) => {
@@ -73,20 +63,16 @@ export const useClassifiedPages = (setStateCallback) => {
           const newNodeData = {}
 
           if (instanceId) {
-            // Réinsérer une instance spécifique
             Object.entries(nodeData).forEach(([docName, instances]) => {
               newNodeData[docName] = instances.filter(inst => inst.id !== instanceId)
             })
 
-            // Nettoyer les documents vides
             Object.keys(newNodeData).forEach(docName => {
               if (newNodeData[docName].length === 0) {
                 delete newNodeData[docName]
               }
             })
           } else {
-            // Réinsérer toutes les pages du nœud
-            // Supprimer le nœud entier
             const newState = { ...prev }
             delete newState[nodeId]
             return newState
@@ -103,7 +89,6 @@ export const useClassifiedPages = (setStateCallback) => {
     }
   })
 
-  // Mutation pour supprimer des instances
   const deleteInstances = useMutation({
     mutationFn: ({ nodeId, instanceIds }) => classificationApi.deleteInstances(instanceIds),
     onSuccess: (data, variables) => {
@@ -118,7 +103,6 @@ export const useClassifiedPages = (setStateCallback) => {
         if (!nodeData) return prev
 
         if (instanceIds) {
-          // Supprimer des instances spécifiques
           const newNodeData = {}
           Object.entries(nodeData).forEach(([docName, instances]) => {
             newNodeData[docName] = instances.filter(
@@ -126,7 +110,6 @@ export const useClassifiedPages = (setStateCallback) => {
             )
           })
 
-          // Nettoyer les documents vides
           Object.keys(newNodeData).forEach(docName => {
             if (newNodeData[docName].length === 0) {
               delete newNodeData[docName]
@@ -138,7 +121,6 @@ export const useClassifiedPages = (setStateCallback) => {
             [nodeId]: Object.keys(newNodeData).length > 0 ? newNodeData : undefined
           }
         } else {
-          // Supprimer tout le nœud
           const newState = { ...prev }
           delete newState[nodeId]
           return newState

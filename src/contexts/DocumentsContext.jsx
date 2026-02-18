@@ -21,7 +21,7 @@ export function DocumentsProvider({ children }) {
   const [selectedPageNumber, setSelectedPageNumber] = useState(1)
   const [orderedPages, setOrderedPages] = useState([])
   const [classifiedPages, setClassifiedPages] = useState({})
-  const [documentVersion, setDocumentVersion] = useState(0) // Pour forcer le re-render
+  const [documentVersion, setDocumentVersion] = useState(0) 
 
   const seenPageIdsRef = useRef(new Set())
 
@@ -33,7 +33,6 @@ export function DocumentsProvider({ children }) {
   })
 
   const documents = (documentsData?.documents || []).map(doc => {
-    // Si l'URL est relative (commence par /), on ajoute l'URL de base
     let docUrl = doc.url || `${API_BASE_URL}/uploads/${doc.filename}`
     if (docUrl.startsWith('/')) {
       docUrl = `${API_BASE_URL}${docUrl}`
@@ -42,7 +41,7 @@ export function DocumentsProvider({ children }) {
     return {
       ...doc,
       name: doc.original_name || doc.name,
-      type: doc.file_type || doc.type,
+      type: doc.mime_type || doc.file_type || doc.type, // Priorité à mime_type
       url: docUrl,
       createdAt: doc.created_at || doc.createdAt
     }
@@ -55,28 +54,39 @@ export function DocumentsProvider({ children }) {
     try {
       const result = await documentsApi.uploadDocument(file)
 
-
-      if (result.success) {
-        const newDoc = result.document
-
-        const fullUrl = newDoc.url?.startsWith('/')
-          ? `${API_BASE_URL}${newDoc.url}`
-          : (newDoc.url || `${API_BASE_URL}/uploads/${newDoc.filename}`)
-
-        queryClient.setQueryData(['documents', 'list'], (old) => {
-          const currentDocs = old?.documents || []
-          return {
-            ...old,
-            documents: [...currentDocs, newDoc],
-            total: (old?.total || 0) + 1
-          }
-        })
-
-        setSelectedDocumentId(newDoc.id)
-        setSelectedPageNumber(1)
-
-        return newDoc
+      const newDoc = {
+        id: result.id,
+        filename: result.filename,
+        original_name: result.original_name,
+        name: result.original_name || result.filename,
+        file_type: result.document_type,
+        type: result.mime_type || result.document_type, 
+        mime_type: result.mime_type,
+        size_bytes: result.size_bytes,
+        size: result.size_bytes,
+        url: result.url?.startsWith('/')
+          ? `${API_BASE_URL}${result.url}`
+          : (result.url || `${API_BASE_URL}/uploads/${result.filename}`),
+        document_type: result.document_type,
+        status: result.status,
+        numPages: 1, // Par défaut
+        created_at: result.created_at,
+        updated_at: result.updated_at
       }
+
+      queryClient.setQueryData(['documents', 'list'], (old) => {
+        const currentDocs = old?.documents || []
+        return {
+          ...old,
+          documents: [...currentDocs, newDoc],
+          total: (old?.total || 0) + 1
+        }
+      })
+
+      setSelectedDocumentId(newDoc.id)
+      setSelectedPageNumber(1)
+
+      return newDoc
     } catch (error) {
       throw error
     }
@@ -210,8 +220,6 @@ export function DocumentsProvider({ children }) {
               }
               return updated
             }
-            // Si le document n'a pas de pages mais a plusieurs pages (multipages PDF)
-            // On crée une structure de pages pour ne pas affecter les autres pages
             else if (doc.numPages && doc.numPages > 1) {
               // Créer un tableau de pages avec l'URL rognée pour cette page spécifique
               const pages = Array.from({ length: doc.numPages }, (_, i) => ({
@@ -254,15 +262,12 @@ export function DocumentsProvider({ children }) {
       })
     })
 
-    // Forcer le re-render de tous les composants qui utilisent les documents
     setDocumentVersion(prev => prev + 1)
   }
   const allPages = documents.flatMap(doc => {
-    // Si le document a des pages, les utiliser en normalisant les URLs
     const docPages = doc.pages
       ? doc.pages.map(page => {
           let pageUrl = page.url
-          // Ensure URL is complete (add base URL if relative)
           if (pageUrl && pageUrl.startsWith('/')) {
             pageUrl = `${API_BASE_URL}${pageUrl}`
           }
@@ -288,8 +293,102 @@ export function DocumentsProvider({ children }) {
   const { eventEmitter } = useWebSocket()
 
   useEffect(() => {
-    if (!eventEmitter) return
-  }, [eventEmitter])
+    console.log('🎯 DocumentsContext - eventEmitter:', eventEmitter ? '✅' : '❌ null')
+
+    if (!eventEmitter) {
+      console.warn('⚠️ eventEmitter is null, skipping listener setup')
+      return
+    }
+
+    console.log('🎯 Setting up document processing listeners')
+
+    const handleDocumentProcessing = (data) => {
+      console.log('📄 Document processing event reçu:', data)
+
+      if (data.status === 'processing' && data.page_url) {
+        // Une nouvelle page a été extraite
+        const newPage = {
+          id: `${data.document_id}-${data.page_number - 1}`,
+          documentId: data.document_id,
+          pageNumber: data.page_number,
+          originalPageNumber: data.page_number,
+          url: `${API_BASE_URL}${data.page_url}`,
+          documentName: documents.find(d => d.id === data.document_id)?.name || 'Document'
+        }
+
+        setOrderedPages(prev => {
+          const exists = prev.some(p => p.id === newPage.id)
+          if (!exists) {
+            return [...prev, newPage]
+          }
+          return prev
+        })
+
+        queryClient.setQueryData(['documents', 'list'], (old) => {
+          if (!old) return old
+
+          return {
+            ...old,
+            documents: old.documents.map(doc => {
+              if (doc.id === data.document_id) {
+                const existingPages = doc.pages || []
+                const pageExists = existingPages.some(p => p.pageNumber === data.page_number)
+
+                if (!pageExists) {
+                  const updatedPage = {
+                    pageNumber: data.page_number,
+                    url: newPage.url,
+                    originalPageNumber: data.page_number
+                  }
+
+                  return {
+                    ...doc,
+                    pages: [...existingPages, updatedPage],
+                    numPages: Math.max(doc.numPages || 1, data.page_number)
+                  }
+                }
+              }
+              return doc
+            })
+          }
+        })
+
+        setDocumentVersion(prev => prev + 1)
+      } else if (data.status === 'completed') {
+        queryClient.setQueryData(['documents', 'list'], (old) => {
+          if (!old) return old
+
+          return {
+            ...old,
+            documents: old.documents.map(doc => {
+              if (doc.id === data.document_id) {
+                return {
+                  ...doc,
+                  numPages: data.total_pages,
+                  pages: data.pages.map(page => ({
+                    ...page,
+                    url: `${API_BASE_URL}${page.url}`
+                  }))
+                }
+              }
+              return doc
+            })
+          }
+        })
+
+        setDocumentVersion(prev => prev + 1)
+      }
+    }
+
+    // S'abonner aux événements
+    eventEmitter.on('document_processing', handleDocumentProcessing)
+    eventEmitter.on('document_processing_error', handleDocumentProcessing)
+
+    return () => {
+      eventEmitter.off('document_processing', handleDocumentProcessing)
+      eventEmitter.off('document_processing_error', handleDocumentProcessing)
+    }
+  }, [eventEmitter, queryClient, documents])
 
   useEffect(() => {
     if (isLoading) return
@@ -308,11 +407,15 @@ export function DocumentsProvider({ children }) {
   }, [allPages, isLoading, queryClient])
 
   const selectPageById = (pageId) => {
-    const [docId, pageIndex] = pageId.split('-').map(Number)
+    const [docId, pageIndex] = pageId.split('-')
+    const pageIndexNum = parseInt(pageIndex, 10)
     const doc = documents.find(d => d.id === docId)
     if (doc) {
       setSelectedDocumentId(docId)
-      setSelectedPageNumber(pageIndex + 1)
+      setSelectedPageNumber(pageIndexNum + 1)
+      console.log('🎯 selectPageById:', { pageId, docId, pageIndex: pageIndexNum, pageNumber: pageIndexNum + 1, docName: doc.name })
+    } else {
+      console.warn('⚠️ Document non trouvé:', docId, 'documents:', documents.map(d => d.id))
     }
   }
 
@@ -320,8 +423,6 @@ export function DocumentsProvider({ children }) {
     ? `${selectedDocumentId}-${(selectedPageNumber || 1) - 1}`
     : null
 
-  // Utiliser useMemo pour forcer le recalcul de selectedDocument quand documentVersion change
-  // IMPORTANT: Lire directement depuis le cache au lieu de 'documents' pour éviter les données stalles
   const selectedDocument = useMemo(() => {
     // Lire depuis le cache mis à jour
     const cachedData = queryClient.getQueryData(['documents', 'list'])
@@ -337,7 +438,7 @@ export function DocumentsProvider({ children }) {
       return {
         ...doc,
         name: doc.original_name || doc.name,
-        type: doc.file_type || doc.type,
+        type: doc.mime_type || doc.file_type || doc.type, // Priorité à mime_type
         url: docUrl,
         createdAt: doc.created_at || doc.createdAt
       }

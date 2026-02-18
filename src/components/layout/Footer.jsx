@@ -17,7 +17,7 @@ function Footer() {
         {selectedDocument && (
           <>
             <span className="font-bold tracking-widest bg-white/20 px-2 rounded-sm uppercase">
-              {selectedDocument.type.split('/')[1]?.toUpperCase() || 'FILE'}
+              {selectedDocument.type?.split('/')[1]?.toUpperCase() || selectedDocument.file_type?.split('/')[1]?.toUpperCase() || 'FILE'}
             </span>
             <span className="opacity-40">|</span>
             <span>

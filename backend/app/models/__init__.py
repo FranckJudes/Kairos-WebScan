@@ -1,12 +1,36 @@
-from .models import ScanProfile, BlankPageEnum, DefaultEnum
-from .typology import DocumentType
-from .classification import Document, PageClassification
+from .mongo_models import User, License, RecentDocument, ScanProfile
+from .typology_mongo import DocumentType, INITIAL_TYPOLOGY
+from .auth_schemas import (
+    UserStatusEnum,
+    LicenseTypeEnum,
+    RegisterRequest,
+    LoginRequest,
+    UserResponse,
+    LicenseResponse,
+    UserProfileResponse,
+    AuthResponse,
+    MessageResponse
+)
+from .schemas import ScanProfileCreate, ScanProfileUpdate, ScanProfileResponse
 
 __all__ = [
+    # MongoDB Models
+    "User",
+    "License",
+    "RecentDocument",
     "ScanProfile",
-    "BlankPageEnum",
-    "DefaultEnum",
     "DocumentType",
-    "Document",
-    "PageClassification"
+    "INITIAL_TYPOLOGY",
+    "UserStatusEnum",
+    "LicenseTypeEnum",
+    "RegisterRequest",
+    "LoginRequest",
+    "UserResponse",
+    "LicenseResponse",
+    "UserProfileResponse",
+    "AuthResponse",
+    "MessageResponse",
+    "ScanProfileCreate",
+    "ScanProfileUpdate",
+    "ScanProfileResponse",
 ]

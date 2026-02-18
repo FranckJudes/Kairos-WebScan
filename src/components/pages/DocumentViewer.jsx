@@ -14,7 +14,7 @@ import { api } from '../../services/api'
 
 function DocumentViewer() {
   const navigate = useNavigate()
-  const { selectedDocument, addDocuments, selectedPageNumber, updateDocumentNumPages, updatePageUrl, documentVersion, clearDocuments } = useDocuments()
+  const { selectedDocument, addDocuments, selectedPageNumber, setSelectedPageNumber, updateDocumentNumPages, updatePageUrl, documentVersion, clearDocuments } = useDocuments()
   const { orderedPages } = useOrganizePages()
   const { createBannette, isCreating } = useBannettes()
   const [scale, setScale] = useState(1.0)
@@ -49,6 +49,19 @@ function DocumentViewer() {
   const rotateRight = () => setRotation(prev => prev + 90)
   const resetRotation = () => setRotation(0)
 
+  const goToPreviousPage = () => {
+    if (selectedPageNumber > 1) {
+      setSelectedPageNumber(selectedPageNumber - 1)
+    } 
+  }
+
+  const goToNextPage = () => {
+    const maxPage = selectedDocument?.numPages || selectedDocument?.pages?.length || undefined
+    if (!maxPage || selectedPageNumber < maxPage) {
+      setSelectedPageNumber(selectedPageNumber + 1)
+    } 
+  }
+
   const toggleCropMode = async () => {
     // Si on active le mode rognage et que c'est un PDF
     if (!isCropMode && isPdfDocument) {
@@ -56,26 +69,20 @@ function DocumentViewer() {
       toast.loading('Conversion du PDF en image...', { id: 'pdf-conversion' })
 
       try {
-        // Charger le document PDF
         const loadingTask = pdfjsLib.getDocument(selectedDocument.url)
         const pdf = await loadingTask.promise
 
-        // Récupérer la page
         const pdfPage = await pdf.getPage(pdfPageNumber)
 
-        // Calculer les dimensions
         const viewport = pdfPage.getViewport({ scale: scale * 2 })
 
-        // Créer un canvas
         const canvas = document.createElement('canvas')
         const context = canvas.getContext('2d')
         canvas.height = viewport.height
         canvas.width = viewport.width
 
-        // Rendre la page dans le canvas
         await pdfPage.render({ canvasContext: context, viewport: viewport }).promise
 
-        // Convertir en data URL
         const imageDataUrl = canvas.toDataURL('image/jpeg', 0.95)
         setPdfImageDataUrl(imageDataUrl)
         setIsCropMode(true)
@@ -83,18 +90,15 @@ function DocumentViewer() {
         toast.dismiss('pdf-conversion')
         toast.success('PDF converti - Vous pouvez maintenant rogner')
       } catch (error) {
-        console.error('Erreur lors de la conversion du PDF:', error)
         toast.dismiss('pdf-conversion')
         toast.error('Erreur lors de la conversion du PDF')
       } finally {
         setIsConvertingPdf(false)
       }
     } else if (!isCropMode && !isPdfDocument) {
-      // Pour les images, on active simplement le mode rognage
       setIsCropMode(true)
       toast.success('Mode rognage activé - Sélectionnez la zone à conserver')
     } else {
-      // Désactiver le mode rognage
       setIsCropMode(false)
       setPdfImageDataUrl(null)
     }
@@ -108,7 +112,6 @@ function DocumentViewer() {
     }
 
     try {
-      // Get cropped canvas
       const canvas = cropper.getCroppedCanvas({
         maxWidth: 4096,
         maxHeight: 4096,
@@ -122,13 +125,11 @@ function DocumentViewer() {
         return
       }
 
-      // Uploader l'image rognée au serveur
       toast.loading('Upload de l\'image rognée...', { id: 'crop-upload' })
 
       const filename = `${selectedDocument.name}_page_${selectedPageNumber}_cropped_${Date.now()}.jpg`
       const uploadedUrl = await api.uploadCroppedImage(canvas, filename)
 
-      // Mettre à jour l'URL de la page dans le document avec l'URL uploadée
       await updatePageUrl(selectedDocument.id, pdfPageNumber, uploadedUrl)
 
       toast.dismiss('crop-upload')
@@ -136,7 +137,6 @@ function DocumentViewer() {
       setIsCropMode(false)
       setPdfImageDataUrl(null)
     } catch (error) {
-      console.error('Erreur lors du rognage:', error)
       toast.dismiss('crop-upload')
       toast.error('Erreur lors du rognage')
     }
@@ -172,10 +172,7 @@ function DocumentViewer() {
     navigate('/organize')
   }
 
-  // Forcer le re-render quand documentVersion change (après un rognage)
-  useEffect(() => {
-    // Ce useEffect force le composant à se re-render quand documentVersion change
-  }, [documentVersion, selectedDocument, selectedPageNumber])
+
 
   // Définir les variables liées au document ici pour qu'elles soient disponibles dans les fonctions
   const hasMultiplePages = selectedDocument?.pages && selectedDocument.pages.length > 1
@@ -192,8 +189,17 @@ function DocumentViewer() {
     ? currentPage?.url || selectedDocument.pages[0]?.url
     : selectedDocument?.url
 
-  // Vérifier si c'est un PDF (attention : une page rognée devient une image data URL)
-  const isPdfDocument = selectedDocument?.type === 'application/pdf' && !currentPageUrl?.startsWith('data:image')
+  // Vérifier si c'est un PDF (vérifie l'URL actuelle, pas seulement le type du document)
+  const isPdfDocument = selectedDocument?.type === 'application/pdf' &&
+    !currentPageUrl?.startsWith('data:image') &&
+    !currentPageUrl?.toLowerCase().endsWith('.jpg') &&
+    !currentPageUrl?.toLowerCase().endsWith('.jpeg') &&
+    !currentPageUrl?.toLowerCase().endsWith('.png') &&
+    !currentPageUrl?.toLowerCase().endsWith('.webp') &&
+    !currentPageUrl?.toLowerCase().endsWith('.gif')
+
+  // DEBUG
+  console.log('🔍 DocumentViewer:', { selectedPageNumber, hasMultiplePages, currentPageUrl, isPdfDocument })
 
   // Fonction pour enregistrer dans une bannette
   const handleSave = async () => {
@@ -206,7 +212,7 @@ function DocumentViewer() {
       await createBannette(
         bannetteName || `Bannette ${new Date().toLocaleDateString('fr-FR')}`,
         orderedPages,
-        {}, // Pages classées (à récupérer depuis le contexte si nécessaire)
+        {},
         orderedPages.length,
         bannetteDescription || null
       )
@@ -241,7 +247,7 @@ function DocumentViewer() {
             </p>
             <div className="space-y-2 text-xs text-[#605e5c] dark:text-dark-text mb-6">
               <p>Supported formats: PDF, JPG, PNG, TIFF, BMP, WEBP</p>
-              <p>Maximum file size: 50 MB</p>
+              <p>Maximum file size: 1 GB</p>
             </div>
             <label className="inline-flex items-center space-x-2 bg-[#106EBE] dark:bg-blue-600 hover:bg-[#005a9e] dark:hover:bg-blue-700 text-white px-6 md:px-8 py-3 md:py-4 rounded-full shadow-lg cursor-pointer transition-all transform hover:scale-105">
               <span className="material-symbols-outlined">folder_open</span>
@@ -274,7 +280,7 @@ function DocumentViewer() {
             </span>
           </div>
           <span className="text-[9px] md:text-[10px] font-medium text-[#605e5c] dark:text-dark-text uppercase tracking-wider bg-[#f3f2f1] dark:bg-dark-bgTertiary px-2 md:px-3 py-1 rounded-full whitespace-nowrap">
-            {selectedDocument.type.split('/')[1]?.toUpperCase() || 'FILE'}
+            {selectedDocument.type?.split('/')[1]?.toUpperCase() || selectedDocument.file_type?.split('/')[1]?.toUpperCase() || 'FILE'}
           </span>
         </div>
 
@@ -515,6 +521,8 @@ function DocumentViewer() {
                       alt={`${selectedDocument.name} - Page ${selectedPageNumber}`}
                       className="w-auto h-auto object-contain"
                       style={{ transform: `scale(${scale})`, transformOrigin: 'top center' }}
+                      onLoad={() => console.log('✅ Image chargée:', currentPageUrl)}
+                      onError={(e) => console.error('❌ Erreur chargement image:', e, 'URL:', currentPageUrl)}
                     />
 
                     {/* Document Corners */}
@@ -530,21 +538,71 @@ function DocumentViewer() {
         </div>
       </div>
 
-      {/* Floating Action Buttons */}
-      {/* <div className="fixed bottom-10 right-10 flex flex-col items-end space-y-4 z-10">
-        <div className="flex flex-col space-y-2">
-          <button className="w-12 h-12 bg-white rounded-full shadow-lg border border-[#edebe9] flex items-center justify-center text-blue-600 hover:scale-110 transition-transform" title="Download">
-            <span className="material-symbols-outlined">download</span>
-          </button>
-          <button className="w-12 h-12 bg-white rounded-full shadow-lg border border-[#edebe9] flex items-center justify-center text-sky-500 hover:scale-110 transition-transform" title="Share">
-            <span className="material-symbols-outlined">share</span>
-          </button>
+      {/* Floating Navigation Bar */}
+      {selectedDocument && (
+        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-20">
+          <div className="flex items-center justify-center space-x-2">
+            {/* Bouton Page Précédente */}
+            <button
+              onClick={goToPreviousPage}
+              disabled={selectedPageNumber <= 1}
+              className="w-12 h-12 rounded-full bg-blue-400 shadow-lg border border-blue-300 flex items-center justify-center text-white hover:bg-blue-500 hover:scale-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 group"
+              title="Page précédente"
+            >
+              <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">chevron_left</span>
+            </button>
+
+            {/* Bouton Zoom - */}
+            <button
+              onClick={zoomOut}
+              disabled={scale <= 0.5}
+              className="w-12 h-12 rounded-full bg-blue-400 shadow-lg border border-blue-300 flex items-center justify-center text-white hover:bg-blue-500 hover:scale-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 group"
+              title="Zoom arrière"
+            >
+              <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">zoom_out</span>
+            </button>
+
+            {/* Bouton Plein Écran */}
+            <button
+              onClick={toggleFullscreen}
+              className={`w-12 h-12 rounded-full shadow-lg border border-blue-300 flex items-center justify-center transition-all hover:scale-110 group ${
+                isFullscreen ? 'bg-blue-600 text-white ring-2 ring-blue-300' : 'bg-blue-400 text-white hover:bg-blue-500'
+              }`}
+              title={isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
+            >
+              <span className={`material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform ${isFullscreen ? 'animate-pulse' : ''}`}>
+                {isFullscreen ? 'fullscreen_exit' : 'fullscreen'}
+              </span>
+            </button>
+
+            {/* Bouton Zoom + */}
+            <button
+              onClick={zoomIn}
+              disabled={scale >= 3}
+              className="w-12 h-12 rounded-full bg-blue-400 shadow-lg border border-blue-300 flex items-center justify-center text-white hover:bg-blue-500 hover:scale-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 group"
+              title="Zoom avant"
+            >
+              <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">zoom_in</span>
+            </button>
+
+            {/* Bouton Page Suivante */}
+            <button
+              onClick={goToNextPage}
+              disabled={
+                selectedDocument?.numPages
+                  ? selectedPageNumber >= selectedDocument.numPages
+                  : selectedDocument?.pages?.length
+                    ? selectedPageNumber >= selectedDocument.pages.length
+                    : false // Ne pas désactiver si on ne connaît pas le nombre de pages
+              }
+              className="w-12 h-12 rounded-full bg-blue-400 shadow-lg border border-blue-300 flex items-center justify-center text-white hover:bg-blue-500 hover:scale-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 group"
+              title="Page suivante"
+            >
+              <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">chevron_right</span>
+            </button>
+          </div>
         </div>
-        <button className="bg-[#106EBE] hover:bg-[#005a9e] text-white px-8 py-4 rounded-full shadow-xl flex items-center space-x-3 transition-all transform hover:scale-105 active:scale-95">
-          <span className="material-symbols-outlined">picture_as_pdf</span>
-          <span className="font-semibold tracking-wide">EXPORT AS PDF</span>
-        </button>
-      </div> */}
+      )}
     </main>
 
     {/* Modal de sauvegarde dans une bannette */}

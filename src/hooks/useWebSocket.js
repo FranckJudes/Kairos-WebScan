@@ -21,10 +21,12 @@ const useWebSocket = () => {
       const host = import.meta.env.VITE_WS_URL || 'localhost:8000';
       const wsUrl = `${protocol}//${host}/ws/`;
 
+      console.log('🔌 Tentative de connexion WebSocket:', wsUrl);
 
       wsRef.current = new WebSocket(wsUrl);
 
       wsRef.current.onopen = () => {
+        console.log('✅ WebSocket connecté:', wsUrl);
         setIsConnected(true);
         reconnectAttemptsRef.current = 0;
         sendMessage({ type: 'ping', data: { timestamp: Date.now() } });
@@ -34,33 +36,43 @@ const useWebSocket = () => {
         try {
           const message = JSON.parse(event.data);
 
+          console.log('📨 WebSocket message reçu:', message);
+
           setLastMessage(message);
 
           if (message.type) {
+            console.log('📢 Emit event:', message.type, message.data);
             eventEmitterRef.current.emit(message.type, message.data);
           }
 
           eventEmitterRef.current.emit('message', message);
         } catch (error) {
+          console.error('❌ Erreur parsing WebSocket:', error);
         }
       };
 
       wsRef.current.onclose = (event) => {
+        console.log('❌ WebSocket déconnecté:', event.code, event.reason);
         setIsConnected(false);
 
         if (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
           reconnectAttemptsRef.current++;
 
+          console.log(`🔄 Tentative reconnexion ${reconnectAttemptsRef.current}/${MAX_RECONNECT_ATTEMPTS} dans ${RECONNECT_DELAY}ms`);
+
           reconnectTimeoutRef.current = setTimeout(() => {
             connect();
           }, RECONNECT_DELAY);
         } else {
+          console.error('❌ Max tentatives reconnexion atteint');
         }
       };
 
       wsRef.current.onerror = (error) => {
+        console.error('❌ WebSocket erreur:', error);
       };
     } catch (error) {
+      console.error('❌ Erreur connexion WebSocket:', error);
     }
   }, []);
 

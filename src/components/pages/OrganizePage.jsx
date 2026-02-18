@@ -120,7 +120,6 @@ function PageModal({ page, onClose, rotatePage, updatePageUrl }) {
         toast.dismiss()
         toast.success('PDF converti - Vous pouvez maintenant rogner')
       } catch (error) {
-        console.error('Erreur lors de la conversion du PDF:', error)
         toast.dismiss()
         toast.error('Erreur lors de la conversion du PDF')
       } finally {
@@ -173,7 +172,6 @@ function PageModal({ page, onClose, rotatePage, updatePageUrl }) {
       setIsCropMode(false)
       setPdfImageDataUrl(null)
     } catch (error) {
-      console.error('Erreur lors du rognage:', error)
       toast.dismiss('crop-upload')
       toast.error('Erreur lors du rognage')
     }

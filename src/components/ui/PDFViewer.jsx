@@ -38,7 +38,6 @@ function PDFViewer({ url, fileName, pageNumber, onPageLoad, scale, onZoomIn, onZ
   }
 
   function onDocumentLoadError(error) {
-    console.error('Erreur chargement PDF:', error.message)
     setLoadError(error.message)
   }
 

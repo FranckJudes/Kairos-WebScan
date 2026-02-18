@@ -5,6 +5,9 @@ import { useDarkMode } from '../../hooks/useDarkMode'
 import { useBannettes } from '../../hooks/useBannettes'
 import { useNavigate } from 'react-router-dom'
 import { useDocuments } from '../../contexts/DocumentsContext'
+import { useAuth } from '../../contexts/AuthContext'
+import AccountMenu from '../AccountMenu'
+import LoginRounded from '@mui/icons-material/LoginRounded'
 import toast from 'react-hot-toast'
 
 function BannettesModal({ isOpen, onClose, bannettes, onLoadBannette, onDeleteBannette, isDeleting, currentPage, totalPages, total, goToPage, prevPage, nextPage }) {
@@ -190,6 +193,7 @@ function Header({ onToggleSidebar, isSidebarOpen }) {
   } = useBannettes()
   const navigate = useNavigate()
   const { setOrderedPages, setClassifiedPages, addDocuments } = useDocuments()
+  const { isAuthenticated } = useAuth()
 
   const handleLoadBannette = async (bannette) => {
     try {
@@ -206,10 +210,8 @@ function Header({ onToggleSidebar, isSidebarOpen }) {
       }
 
       setShowBannettes(false)
-      // Notification
       toast.success(`Bannette "${bannette.name}" chargée avec succès !`)
     } catch (error) {
-      console.error('Erreur chargement bannette:', error)
       toast.error('Erreur lors du chargement de la bannette')
     }
   }
@@ -219,7 +221,6 @@ function Header({ onToggleSidebar, isSidebarOpen }) {
       await deleteBannette(bannette.id)
       toast.success('Bannette supprimée')
     } catch (error) {
-      console.error('Erreur suppression bannette:', error)
       toast.error('Erreur lors de la suppression')
     }
   }
@@ -283,14 +284,18 @@ function Header({ onToggleSidebar, isSidebarOpen }) {
           </button>
           {/* Bouton toggle dark mode */}
           <DarkModeToggle />
-          {/* User avatar avec taille responsive */}
-          <div className="w-8 h-8 sm:w-7 sm:h-7 rounded-full bg-white/20 overflow-hidden border border-white/30">
-            <img
-              alt="User"
-              className="w-full h-full object-cover"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDl3E7htN3y7W1dQg533vblGrq_JbzH3MEU6f2LWX2-Gvfw-dFDzNCbxXucuiifw75esq6EjY6QbpA4qVgQOqzHVC6pD6AgRpnpmkmBYO52JuHIcjSQro9yWbH4yejREHxLrVqvgMMfnN7jiqx9MDFlFuC_llAVQwDLbi4wSwf-cK3LCdGfCbHVE4hpiio7sHHkGC59HYdKcS9PltSWguWqd61efj_gaTdwMQE3BSjdinZpdbyoDVbGI4ILSwRvMVvSz-i386qZsZLx"
-            />
-          </div>
+          {/* User account section */}
+          {isAuthenticated ? (
+            <AccountMenu />
+          ) : (
+            <button
+              onClick={() => navigate('/login')}
+              className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-white text-sm font-medium"
+            >
+              <LoginRounded className="w-4 h-4" />
+              <span className="hidden sm:inline">Se connecter</span>
+            </button>
+          )}
         </div>
       </header>
 

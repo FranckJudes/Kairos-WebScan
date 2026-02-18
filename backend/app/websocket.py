@@ -30,7 +30,6 @@ class ConnectionManager:
         self.active_connections.add(websocket)
         if client_id:
             self.connection_ids[websocket] = client_id
-        logger.info(f"✅ Client WebSocket connecté (total: {len(self.active_connections)})")
 
     def disconnect(self, websocket: WebSocket):
         """
@@ -43,7 +42,6 @@ class ConnectionManager:
             self.active_connections.remove(websocket)
         if websocket in self.connection_ids:
             del self.connection_ids[websocket]
-        logger.info(f"❌ Client WebSocket déconnecté (total: {len(self.active_connections)})")
 
     async def send_personal_message(self, message: dict, websocket: WebSocket):
         """
@@ -56,7 +54,6 @@ class ConnectionManager:
         try:
             await websocket.send_json(message)
         except Exception as e:
-            logger.error(f"❌ Erreur lors de l'envoi du message personnel: {e}")
             self.disconnect(websocket)
 
     async def broadcast(self, message: dict, exclude: WebSocket = None):
@@ -68,7 +65,6 @@ class ConnectionManager:
             exclude: Connexion WebSocket à exclure (optionnel)
         """
         if not self.active_connections:
-            logger.debug("⚠️ Aucun client WebSocket connecté pour le broadcast")
             return
 
         connections = list(self.active_connections)
@@ -81,7 +77,6 @@ class ConnectionManager:
             try:
                 await connection.send_json(message)
             except Exception as e:
-                logger.error(f"❌ Erreur lors du broadcast à un client: {e}")
                 failed_connections.append(connection)
 
         for connection in failed_connections:
@@ -90,7 +85,6 @@ class ConnectionManager:
         if failed_connections:
             logger.warning(f"⚠️ {len(failed_connections)} connexion(s) échouée(s) lors du broadcast")
 
-    # ========== Méthodes spécialisées pour les événements ==========
 
     async def notify_pages_classified(self, data: dict):
         """
@@ -110,7 +104,6 @@ class ConnectionManager:
             "data": data
         }
         await self.broadcast(message)
-        logger.info(f"📢 Notification pages_classified envoyée à {len(self.active_connections)} client(s)")
 
     async def notify_pages_reinserted(self, data: dict):
         """
@@ -128,7 +121,6 @@ class ConnectionManager:
             "data": data
         }
         await self.broadcast(message)
-        logger.info(f"📢 Notification pages_reinserted envoyée à {len(self.active_connections)} client(s)")
 
     async def notify_instance_deleted(self, data: dict):
         """
@@ -147,7 +139,6 @@ class ConnectionManager:
             "data": data
         }
         await self.broadcast(message)
-        logger.info(f"📢 Notification instance_deleted envoyée à {len(self.active_connections)} client(s)")
 
     async def notify_typology_updated(self, data: dict):
         """
@@ -166,7 +157,6 @@ class ConnectionManager:
             "data": data
         }
         await self.broadcast(message)
-        logger.info(f"📢 Notification typology_updated envoyée à {len(self.active_connections)} client(s)")
 
     async def notify_scan_profile_updated(self, data: dict):
         """
@@ -185,7 +175,6 @@ class ConnectionManager:
             "data": data
         }
         await self.broadcast(message)
-        logger.info(f"📢 Notification scan_profile_updated envoyée à {len(self.active_connections)} client(s)")
 
     async def notify_document_scanned(self, data: dict):
         """
@@ -204,7 +193,6 @@ class ConnectionManager:
             "data": data
         }
         await self.broadcast(message)
-        logger.info(f"📢 Notification document_scanned envoyée à {len(self.active_connections)} client(s)")
 
     async def notify_thumbnail_generated(self, data: dict):
         """
@@ -223,7 +211,6 @@ class ConnectionManager:
             "data": data
         }
         await self.broadcast(message)
-        logger.info(f"📢 Notification thumbnail_generated envoyée à {len(self.active_connections)} client(s)")
 
     async def notify_batch_update(self, data: dict):
         """
@@ -241,7 +228,6 @@ class ConnectionManager:
             "data": data
         }
         await self.broadcast(message)
-        logger.info(f"📢 Notification batch_update envoyée à {len(self.active_connections)} client(s)")
 
     def get_connection_count(self) -> int:
         """
@@ -267,7 +253,6 @@ class ConnectionManager:
         ]
 
 
-# Instance globale du gestionnaire de connexions
 manager: ConnectionManager = None
 
 

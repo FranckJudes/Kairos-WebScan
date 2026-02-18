@@ -3,6 +3,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 /**
+ * Récupère le token d'authentification depuis le stockage
+ */
+const getToken = () => {
+  return localStorage.getItem('token') || sessionStorage.getItem('token')
+}
+
+/**
  * API pour gérer les documents avec upload et persistance
  */
 export const documentsApi = {
@@ -13,8 +20,16 @@ export const documentsApi = {
     const formData = new FormData()
     formData.append('file', file)
 
+    const token = getToken()
+    const headers = {}
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
     const response = await fetch(`${API_BASE_URL}/documents/upload`, {
       method: 'POST',
+      credentials: 'include', 
+      headers,
       body: formData,
     })
 
@@ -35,8 +50,16 @@ export const documentsApi = {
       formData.append('files', file)
     })
 
+    const token = getToken()
+    const headers = {}
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
     const response = await fetch(`${API_BASE_URL}/documents/upload/batch`, {
       method: 'POST',
+      credentials: 'include', // Important: Envoie les cookies HttpOnly
+      headers,
       body: formData,
     })
 
@@ -52,8 +75,18 @@ export const documentsApi = {
    * Récupère la liste des documents
    */
   async listDocuments(skip = 0, limit = 20) {
+    const token = getToken()
+    const headers = {}
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
     const response = await fetch(
-      `${API_BASE_URL}/documents/?skip=${skip}&limit=${limit}`
+      `${API_BASE_URL}/documents/?skip=${skip}&limit=${limit}`,
+      {
+        credentials: 'include',
+        headers
+      }
     )
 
     if (!response.ok) {
@@ -67,7 +100,16 @@ export const documentsApi = {
    * Récupère un document par ID
    */
   async getDocument(documentId) {
-    const response = await fetch(`${API_BASE_URL}/documents/${documentId}`)
+    const token = getToken()
+    const headers = {}
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
+    const response = await fetch(`${API_BASE_URL}/documents/${documentId}`, {
+      credentials: 'include',
+      headers
+    })
 
     if (!response.ok) {
       throw new Error('Document non trouvé')
@@ -80,8 +122,18 @@ export const documentsApi = {
    * Récupère les pages d'un document avec pagination
    */
   async getDocumentPages(documentId, page = 1, limit = 50) {
+    const token = getToken()
+    const headers = {}
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
     const response = await fetch(
-      `${API_BASE_URL}/documents/${documentId}/pages?page=${page}&limit=${limit}`
+      `${API_BASE_URL}/documents/${documentId}/pages?page=${page}&limit=${limit}`,
+      {
+        credentials: 'include',
+        headers
+      }
     )
 
     if (!response.ok) {
@@ -95,8 +147,16 @@ export const documentsApi = {
    * Supprime un document
    */
   async deleteDocument(documentId) {
+    const token = getToken()
+    const headers = {}
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
     const response = await fetch(`${API_BASE_URL}/documents/${documentId}`, {
       method: 'DELETE',
+      credentials: 'include',
+      headers
     })
 
     if (!response.ok) {
