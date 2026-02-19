@@ -9,7 +9,6 @@ Backend FastAPI pour gérer les profils de scan.
 cd backend
 python3 -m venv venv
 source venv/bin/activate  # Linux/Mac
-# ou
 venv\Scripts\activate  # Windows
 ```
 
@@ -72,3 +71,6 @@ backend/
 ├── run.py
 └── .env
 ```
+
+
+ venv/bin/celery -A celery_worker worker --loglevel=info

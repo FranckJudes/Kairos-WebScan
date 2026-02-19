@@ -15,7 +15,6 @@ class DefaultEnum(str, Enum):
     yes = "1"
 
 
-# Schema pour créer un profil de scan
 class ScanProfileCreate(BaseModel):
     libele: str = Field(..., max_length=255, description="Nom du profil de scan")
     paper_size: str = Field(default="A4", description="Format papier (A4, A3, Letter, Legal)")
@@ -29,7 +28,6 @@ class ScanProfileCreate(BaseModel):
     default: DefaultEnum = Field(default=DefaultEnum.no, description="Profil par défaut")
 
 
-# Schema pour mettre à jour un profil de scan
 class ScanProfileUpdate(BaseModel):
     libele: Optional[str] = Field(None, max_length=255)
     paper_size: Optional[str] = None
@@ -43,7 +41,6 @@ class ScanProfileUpdate(BaseModel):
     default: Optional[DefaultEnum] = None
 
 
-# Schema pour la réponse API (avec tous les champs)
 class ScanProfileResponse(ScanProfileCreate):
     id: str  # MongoDB ObjectId
     brithness: Optional[int] = None  # Pour compatibilité avec l'ancien nom

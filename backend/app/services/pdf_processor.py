@@ -113,11 +113,9 @@ class PDFProcessor:
             if not img_bytes:
                 return None
 
-            # Créer le dossier de sortie si nécessaire
             output_dir = Path(output_path).parent
             output_dir.mkdir(parents=True, exist_ok=True)
 
-            # Sauvegarder l'image
             with open(output_path, "wb") as f:
                 f.write(img_bytes)
 
@@ -147,7 +145,6 @@ class PDFProcessor:
         pages = []
 
         try:
-            # Obtenir le nombre de pages
             page_count = await loop.run_in_executor(
                 self.executor,
                 self._get_page_count,
@@ -171,7 +168,7 @@ class PDFProcessor:
                     pdf_path,
                     page_num,
                     str(output_path),
-                    2.0,  # zoom
+                    2.0,  
                     "JPEG"
                 )
 
@@ -181,13 +178,12 @@ class PDFProcessor:
                         "original_page_number": page_num + 1,
                         "filename": output_filename,
                         "url": f"/uploads/pages/{document_id}/{output_filename}",
-                        "width": None,  # Sera rempli plus tard si nécessaire
+                        "width": None,  
                         "height": None
                     }
 
                     pages.append(page_info)
 
-                    # Callback de progression
                     if progress_callback:
                         await progress_callback({
                             "document_id": document_id,
@@ -230,14 +226,12 @@ class PDFProcessor:
         loop = asyncio.get_event_loop()
 
         try:
-            # Créer le dossier pour les pages
             pages_dir = self.upload_dir / "pages" / document_id
             pages_dir.mkdir(parents=True, exist_ok=True)
 
             output_filename = f"page_{page_number}.jpg"
             output_path = pages_dir / output_filename
 
-            # Sauvegarder la page (page_number est 1-indexé, on le convertit en 0-indexé)
             saved_path = await loop.run_in_executor(
                 self.executor,
                 self.save_page_as_image,
@@ -264,7 +258,6 @@ class PDFProcessor:
             return None
 
 
-# Instance globale
 _processor: Optional[PDFProcessor] = None
 
 

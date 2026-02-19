@@ -25,6 +25,8 @@ export const AuthProvider = ({ children }) => {
   })
 
   const user = profile?.user
+  const recentDocuments = profile?.recent_documents || []
+  const license = profile?.license || null
   const isAuthenticated = !!token && !!user && !error
 
   const loginMutation = useMutation({

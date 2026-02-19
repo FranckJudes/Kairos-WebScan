@@ -29,7 +29,6 @@ class RedisListener:
             return
 
         try:
-            # Créer un client Redis séparé pour pub/sub
             import redis as redis_lib
             self.redis_client = redis_lib.Redis(
                 host="localhost",
@@ -114,7 +113,6 @@ class RedisListener:
         try:
             while self.is_running:
                 try:
-                    # Attendre un message avec timeout
                     message = await asyncio.wait_for(
                         self.message_queue.get(),
                         timeout=1.0
@@ -123,7 +121,6 @@ class RedisListener:
                     await self._handle_message(message)
 
                 except asyncio.TimeoutError:
-                    # Pas de message, continuer
                     continue
                 except Exception as e:
                     logger.error(f"Erreur traitement message depuis queue: {e}")

@@ -1,10 +1,7 @@
 import { toast } from 'react-hot-toast'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-/**
- * Récupère le token d'authentification depuis le stockage
- */
 const getToken = () => {
   return localStorage.getItem('token') || sessionStorage.getItem('token')
 }
@@ -23,7 +20,7 @@ const authFetch = async (endpoint, options = {}) => {
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
-    credentials: 'include', // Important: Envoie les cookies HttpOnly
+    credentials: 'include', 
     headers
   })
 

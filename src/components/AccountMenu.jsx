@@ -8,10 +8,7 @@ import {
   HelpOutlineRounded,
   KeyboardArrowDownRounded,
   FolderRounded,
-  CenterFocusStrongRounded,
-  TranslateRounded,
-  DarkModeRounded,
-  NotificationsRounded
+  CenterFocusStrongRounded
 } from '@mui/icons-material'
 
 const AccountMenu = () => {
@@ -136,7 +133,7 @@ const AccountMenu = () => {
             <button
               onClick={() => {
                 setIsOpen(false)
-                navigate('/account')
+                navigate('/account#profile')
               }}
               className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors"
             >
@@ -147,7 +144,7 @@ const AccountMenu = () => {
             <button
               onClick={() => {
                 setIsOpen(false)
-                navigate('/account/license')
+                navigate('/account#license')
               }}
               className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors"
             >
@@ -158,7 +155,7 @@ const AccountMenu = () => {
             <button
               onClick={() => {
                 setIsOpen(false)
-                navigate('/account/recent')
+                navigate('/account#documents')
               }}
               className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors"
             >
@@ -173,22 +170,15 @@ const AccountMenu = () => {
               </p>
             </div>
 
-            <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors">
-              <TranslateRounded className="w-5 h-5 text-[#605e5c] dark:text-dark-textTertiary" />
-              <span>Langue</span>
-              <span className="ml-auto text-xs text-[#c8c6c4] dark:text-dark-textTertiary">Français</span>
-            </button>
-
-            <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors">
-              <DarkModeRounded className="w-5 h-5 text-[#605e5c] dark:text-dark-textTertiary" />
-              <span>Thème</span>
-              <span className="ml-auto text-xs text-[#c8c6c4] dark:text-dark-textTertiary">Système</span>
-            </button>
-
-            <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors">
-              <NotificationsRounded className="w-5 h-5 text-[#605e5c] dark:text-dark-textTertiary" />
-              <span>Notifications</span>
-              <span className="ml-auto text-xs text-[#c8c6c4] dark:text-dark-textTertiary">Activées</span>
+            <button
+              onClick={() => {
+                setIsOpen(false)
+                navigate('/account#preferences')
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors"
+            >
+              <SettingsRounded className="w-5 h-5 text-[#605e5c] dark:text-dark-textTertiary" />
+              <span>Préférences</span>
             </button>
 
             {/* Autre */}
@@ -198,12 +188,24 @@ const AccountMenu = () => {
               </p>
             </div>
 
-            <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors">
+            <button
+              onClick={() => {
+                setIsOpen(false)
+                navigate('/account#help')
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors"
+            >
               <HelpOutlineRounded className="w-5 h-5 text-[#605e5c] dark:text-dark-textTertiary" />
               <span>Aide et support</span>
             </button>
 
-            <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors">
+            <button
+              onClick={() => {
+                setIsOpen(false)
+                navigate('/account#settings')
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors"
+            >
               <SettingsRounded className="w-5 h-5 text-[#605e5c] dark:text-dark-textTertiary" />
               <span>Paramètres</span>
             </button>

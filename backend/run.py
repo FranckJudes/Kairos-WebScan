@@ -17,5 +17,5 @@ if __name__ == "__main__":
         port=port,
         reload=(env == "development"),
         log_level="info",
-        timeout_keep_alive=300,  # 5 minutes pour les uploads lents
+        timeout_keep_alive=300,  
     )

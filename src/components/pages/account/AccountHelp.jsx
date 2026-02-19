@@ -54,8 +54,6 @@ const AccountHelp = ({ user }) => {
 
   const handleContactSubmit = (e) => {
     e.preventDefault()
-    // Ici, vous enverriez le formulaire à votre API
-    console.log('Formulaire soumis:', contactForm)
     alert('Votre message a été envoyé ! Nous vous répondrons dans les plus brefs délais.')
     setContactForm({ subject: '', message: '', category: 'general' })
   }

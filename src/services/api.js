@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const getToken = () => {
   const localToken = localStorage.getItem('token')
@@ -36,8 +36,18 @@ export const api = {
     return authenticatedFetch(`${API_BASE_URL}/documents`)
   },
 
+  async getRecentDocuments(limit = 5) {
+    return authenticatedFetch(`${API_BASE_URL}/documents/recent?limit=${limit}`)
+  },
+
   async getDocument(id) {
     return authenticatedFetch(`${API_BASE_URL}/documents/${id}`)
+  },
+
+  async deleteDocument(id) {
+    return authenticatedFetch(`${API_BASE_URL}/documents/${id}`, {
+      method: 'DELETE',
+    })
   },
 
   async uploadDocument(file) {
@@ -66,7 +76,6 @@ export const api = {
     return response.json()
   },
 
-  // Example: Start scanning
   async startScan(config) {
     return authenticatedFetch(`${API_BASE_URL}/scan`, {
       method: 'POST',
@@ -77,7 +86,6 @@ export const api = {
     })
   },
 
-  // Example: OCR a document
   async performOcr(documentId, config) {
     return authenticatedFetch(`${API_BASE_URL}/ocr/${documentId}`, {
       method: 'POST',
@@ -96,7 +104,6 @@ export const api = {
     return authenticatedFetch(`${API_BASE_URL}/scan-profiles/${id}`)
   },
 
-  // Scan Profiles - Créer un nouveau profil
   async createScanProfile(profile) {
     return authenticatedFetch(`${API_BASE_URL}/scan-profiles`, {
       method: 'POST',
@@ -163,7 +170,6 @@ export const api = {
     })
   },
 
-  // Upload une image rognée
   async uploadCroppedImage(canvas, filename) {
     return new Promise((resolve, reject) => {
       canvas.toBlob(async (blob) => {

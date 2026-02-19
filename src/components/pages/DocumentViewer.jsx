@@ -63,7 +63,6 @@ function DocumentViewer() {
   }
 
   const toggleCropMode = async () => {
-    // Si on active le mode rognage et que c'est un PDF
     if (!isCropMode && isPdfDocument) {
       setIsConvertingPdf(true)
       toast.loading('Conversion du PDF en image...', { id: 'pdf-conversion' })
@@ -156,7 +155,6 @@ function DocumentViewer() {
     }
   }
 
-  // Listen for fullscreen changes
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement)
@@ -174,22 +172,18 @@ function DocumentViewer() {
 
 
 
-  // Définir les variables liées au document ici pour qu'elles soient disponibles dans les fonctions
   const hasMultiplePages = selectedDocument?.pages && selectedDocument.pages.length > 1
   const numPages = selectedDocument?.numPages || 1
 
-  // Pour les PDFs avec pages (après suppression), trouver le numéro de page original
   const currentPage = selectedDocument?.pages?.find(p => p.pageNumber === selectedPageNumber)
   const pdfPageNumber = (currentPage?.originalPageNumber !== undefined && currentPage?.originalPageNumber !== selectedPageNumber)
     ? currentPage.originalPageNumber
     : selectedPageNumber
 
-  // Récupérer l'URL de la page courante
   const currentPageUrl = hasMultiplePages
     ? currentPage?.url || selectedDocument.pages[0]?.url
     : selectedDocument?.url
 
-  // Vérifier si c'est un PDF (vérifie l'URL actuelle, pas seulement le type du document)
   const isPdfDocument = selectedDocument?.type === 'application/pdf' &&
     !currentPageUrl?.startsWith('data:image') &&
     !currentPageUrl?.toLowerCase().endsWith('.jpg') &&
@@ -198,12 +192,7 @@ function DocumentViewer() {
     !currentPageUrl?.toLowerCase().endsWith('.webp') &&
     !currentPageUrl?.toLowerCase().endsWith('.gif')
 
-  // DEBUG
-  console.log('🔍 DocumentViewer:', { selectedPageNumber, hasMultiplePages, currentPageUrl, isPdfDocument })
-
-  // Fonction pour enregistrer dans une bannette
   const handleSave = async () => {
-    // Ouvrir le modal de sauvegarde
     setShowSaveModal(true)
   }
 
@@ -222,7 +211,6 @@ function DocumentViewer() {
       setBannetteDescription('')
       toast.success('Sauvegardé dans les bannettes !')
     } catch (error) {
-      console.error('Erreur sauvegarde:', error)
       toast.error('Erreur lors de la sauvegarde')
     }
   }
@@ -269,9 +257,7 @@ function DocumentViewer() {
   return (
     <>
     <main ref={documentRef} className="flex-1 relative overflow-hidden flex flex-col">
-      {/* Document Header */}
       <div className="p-2 md:p-3 border-b border-[#edebe9] dark:border-dark-border bg-[#faf9f8] dark:bg-dark-bgSecondary flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-0 shrink-0 transition-colors duration-200">
-        {/* Document info - top row on mobile */}
         <div className="flex items-center justify-between w-full md:w-auto md:space-x-3">
           <div className="flex items-center space-x-2 min-w-0">
             <h2 className="text-xs md:text-sm font-semibold text-[#605e5c] dark:text-dark-text truncate max-w-[150px] md:max-w-md">{selectedDocument.name}</h2>
@@ -284,10 +270,8 @@ function DocumentViewer() {
           </span>
         </div>
 
-        {/* Toolbar - scrollable on mobile, row on desktop */}
         <div className="flex items-center justify-between md:justify-end gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-thin">
           <div className="flex items-center space-x-1 md:space-x-2 shrink-0">
-            {/* Boutons d'action */}
             <button
               onClick={goToOrganize}
               className="bg-[#106EBE] dark:bg-blue-600 hover:bg-[#005a9e] dark:hover:bg-blue-700 text-white px-3 md:px-4 py-2 rounded shadow-lg flex items-center space-x-1 md:space-x-2 transition-all text-xs md:text-sm font-medium min-w-[44px] min-h-[44px]"
@@ -313,10 +297,8 @@ function DocumentViewer() {
         </div>
       </div>
 
-      {/* Document Content */}
       <div className="flex-1 overflow-auto custom-scrollbar bg-white dark:bg-dark-bg">
         <div className="relative min-h-full">
-          {/* Page Actions Toolbar - Floating above the page */}
           <div className="sticky top-0 z-10 bg-white/95 dark:bg-dark-bg/95 backdrop-blur-sm border-b border-[#edebe9] dark:border-dark-border px-4 py-2 shadow-sm">
             <div className="flex items-center justify-between max-w-6xl mx-auto">
               <div className="flex items-center space-x-2">
@@ -327,7 +309,6 @@ function DocumentViewer() {
               </div>
 
               <div className="flex items-center space-x-1 md:space-x-2">
-                {/* Page info and Zoom */}
                 {(isPdfDocument || hasMultiplePages) && (
                   <>
                     <span className="text-[9px] md:text-[10px] text-[#605e5c] dark:text-dark-text whitespace-nowrap font-medium">Pg {selectedPageNumber}/{numPages}</span>
@@ -362,7 +343,6 @@ function DocumentViewer() {
                   </>
                 )}
 
-                {/* Rotation */}
                 <div className="flex items-center space-x-1 bg-[#f3f2f1] dark:bg-dark-bgTertiary rounded-lg p-1">
                   <button
                     onClick={rotateLeft}
@@ -388,10 +368,8 @@ function DocumentViewer() {
                   </button>
                 </div>
 
-                {/* Divider */}
                 <div className="h-6 w-px bg-[#edebe9] dark:border-dark-border hidden sm:block"></div>
 
-                {/* Other Actions */}
                 <div className="flex items-center space-x-1">
                   <button
                     onClick={toggleCropMode}
@@ -442,7 +420,6 @@ function DocumentViewer() {
               </div>
             </div>
 
-            {/* Crop mode indicator */}
             {isCropMode && (
               <div className="mt-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center space-x-2">
                 <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-[18px]">info</span>
@@ -453,7 +430,6 @@ function DocumentViewer() {
             )}
           </div>
 
-          {/* Page Content with rotation */}
           <div
             className={`flex justify-center items-center p-4 md:p-8 transition-transform duration-300 ${
               rotation !== 0 ? 'origin-center' : ''
@@ -521,11 +497,8 @@ function DocumentViewer() {
                       alt={`${selectedDocument.name} - Page ${selectedPageNumber}`}
                       className="w-auto h-auto object-contain"
                       style={{ transform: `scale(${scale})`, transformOrigin: 'top center' }}
-                      onLoad={() => console.log('✅ Image chargée:', currentPageUrl)}
-                      onError={(e) => console.error('❌ Erreur chargement image:', e, 'URL:', currentPageUrl)}
                     />
 
-                    {/* Document Corners */}
                     <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-[#106EBE] dark:border-blue-400 pointer-events-none"></div>
                     <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-[#106EBE] dark:border-blue-400 pointer-events-none"></div>
                     <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-[#106EBE] dark:border-blue-400 pointer-events-none"></div>
@@ -538,11 +511,9 @@ function DocumentViewer() {
         </div>
       </div>
 
-      {/* Floating Navigation Bar */}
       {selectedDocument && (
         <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-20">
           <div className="flex items-center justify-center space-x-2">
-            {/* Bouton Page Précédente */}
             <button
               onClick={goToPreviousPage}
               disabled={selectedPageNumber <= 1}
@@ -552,7 +523,6 @@ function DocumentViewer() {
               <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">chevron_left</span>
             </button>
 
-            {/* Bouton Zoom - */}
             <button
               onClick={zoomOut}
               disabled={scale <= 0.5}
@@ -562,7 +532,6 @@ function DocumentViewer() {
               <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">zoom_out</span>
             </button>
 
-            {/* Bouton Plein Écran */}
             <button
               onClick={toggleFullscreen}
               className={`w-12 h-12 rounded-full shadow-lg border border-blue-300 flex items-center justify-center transition-all hover:scale-110 group ${
@@ -575,7 +544,6 @@ function DocumentViewer() {
               </span>
             </button>
 
-            {/* Bouton Zoom + */}
             <button
               onClick={zoomIn}
               disabled={scale >= 3}
@@ -585,7 +553,6 @@ function DocumentViewer() {
               <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">zoom_in</span>
             </button>
 
-            {/* Bouton Page Suivante */}
             <button
               onClick={goToNextPage}
               disabled={
@@ -593,7 +560,7 @@ function DocumentViewer() {
                   ? selectedPageNumber >= selectedDocument.numPages
                   : selectedDocument?.pages?.length
                     ? selectedPageNumber >= selectedDocument.pages.length
-                    : false // Ne pas désactiver si on ne connaît pas le nombre de pages
+                    : false 
               }
               className="w-12 h-12 rounded-full bg-blue-400 shadow-lg border border-blue-300 flex items-center justify-center text-white hover:bg-blue-500 hover:scale-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 group"
               title="Page suivante"
@@ -605,7 +572,6 @@ function DocumentViewer() {
       )}
     </main>
 
-    {/* Modal de sauvegarde dans une bannette */}
     {showSaveModal && (
       <div
         className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"

@@ -75,7 +75,6 @@ async def update_bannette(
     if not bannette or bannette.user_id != str(current_user.id):
         raise HTTPException(status_code=404, detail="Bannette non trouvée")
     
-    # Mise à jour des champs
     bannette.name = data.name
     bannette.description = data.description
     bannette.pages_order = data.pages_order

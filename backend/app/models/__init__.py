@@ -14,7 +14,6 @@ from .auth_schemas import (
 from .schemas import ScanProfileCreate, ScanProfileUpdate, ScanProfileResponse
 
 __all__ = [
-    # MongoDB Models
     "User",
     "License",
     "RecentDocument",

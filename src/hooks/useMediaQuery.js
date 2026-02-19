@@ -17,12 +17,10 @@ function useMediaQuery(query) {
     const mediaQuery = window.matchMedia(query)
     const handler = (e) => setMatches(e.matches)
 
-    // Compatible avec les anciens navigateurs
     if (mediaQuery.addEventListener) {
       mediaQuery.addEventListener('change', handler)
       return () => mediaQuery.removeEventListener('change', handler)
     } else {
-      // Fallback pour les anciens navigateurs
       mediaQuery.addListener(handler)
       return () => mediaQuery.removeListener(handler)
     }

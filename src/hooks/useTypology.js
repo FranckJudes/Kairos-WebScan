@@ -14,7 +14,6 @@ export const useTypologyTree = () => {
     retry: 2,
   })
 
-  // Convertir les données en format hiérarchique pour react-arborist
   const treeData = useMemo(() => {
     if (!query.data) return null
     return typologyApi.convertToTreeFormat(query.data)
@@ -27,9 +26,9 @@ export const useTypologyInitialization = () => {
   return useQuery({
     queryKey: ['typology', 'init'],
     queryFn: typologyApi.initialize,
-    staleTime: Infinity, // Pas besoin de recharger
+    staleTime: Infinity, 
     retry: 1,
-    enabled: false, // Ne s'exécute pas automatiquement
+    enabled: false,
   })
 }
 

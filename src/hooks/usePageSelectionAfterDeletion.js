@@ -13,7 +13,6 @@ export function usePageSelectionAfterDeletion(allPages, selectedPageId, selected
         const newPageId = docPages[0].id
         selectPageById(newPageId)
       } else {
-        // Current document has no pages, select first page of first available document
         const firstPage = allPages[0]
         selectPageById(firstPage.id)
       }

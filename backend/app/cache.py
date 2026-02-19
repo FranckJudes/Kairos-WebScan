@@ -48,7 +48,6 @@ class CacheManager:
         except RedisError:
             return False
 
-    # ========== Typology Cache ==========
 
     def get_typology_tree(self) -> Optional[List[dict]]:
         """
@@ -105,7 +104,6 @@ class CacheManager:
         except RedisError as e:
             return False
 
-    # ========== Scan Profiles Cache ==========
 
     def get_scan_profiles(self) -> Optional[List[dict]]:
         """
@@ -232,7 +230,6 @@ class CacheManager:
         except RedisError as e:
             return False
 
-    # ========== Generic Cache Methods ==========
 
     def get(self, key: str) -> Optional[Any]:
         """
@@ -313,7 +310,6 @@ class CacheManager:
             return False
 
 
-# Instance globale du gestionnaire de cache
 cache_manager: Optional[CacheManager] = None
 
 

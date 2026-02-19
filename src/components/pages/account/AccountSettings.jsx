@@ -20,15 +20,11 @@ const AccountSettings = ({ user }) => {
 
   const handleDeleteAccount = () => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.')) {
-      // Logique de suppression du compte
-      console.log('Compte supprimé')
       alert('Pour des raisons de sécurité, cette action nécessite une confirmation par email. Un email de confirmation vous a été envoyé.')
     }
   }
 
   const handleExportData = () => {
-    // Logique d'export des données
-    console.log('Export des données')
     alert('Vos données seront exportées au format JSON. Vous recevrez un email lorsque l\'export sera prêt.')
   }
 

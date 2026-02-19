@@ -1,11 +1,10 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_URL 
 
 export const classificationApi = {
     /**
      * Classer des pages dans un dossier (Batch pour supporter multi-documents)
      */
     async classify(nodeId, nodeName, pages) {
-        // Grouper les pages par document
         const pagesByDoc = {}
         pages.forEach(page => {
             if (!pagesByDoc[page.documentId]) {
@@ -40,14 +39,6 @@ export const classificationApi = {
      * Réinsérer une instance de pages dans la grille
      */
     async reinsert(instanceId) {
-        // Note: Le backend n'a pas encore de endpoint batch pour reinsert
-        // On utilise l'endpoint existant qui attend document_id et pages
-        // MAIS wait, le endpoint /reinsert attend document_id et pages.
-        // LE FRONTEND (TypologyTree) nous donne instanceId.
-        // Comment retrouver document_id et pages depuis instanceId ?
-        // Le backend a un endpoint DELETE /instances/{id} qui supprime l'instance et donc "réinsère" les pages (car elles ne sont plus classées).
-        // Donc reinsert == delete instance.
-
         const response = await fetch(`${API_BASE_URL}/classification/instances/${instanceId}`, {
             method: 'DELETE',
         })

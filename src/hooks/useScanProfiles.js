@@ -1,11 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../services/api'
 
-// Hook pour récupérer tous les profils
 export const useScanProfiles = () => {
   const queryClient = useQueryClient()
 
-  // Récupérer tous les profils
   const {
     data: profiles = [],
     isLoading,
@@ -52,7 +50,6 @@ export const useScanProfiles = () => {
   }
 }
 
-// Hook pour récupérer un profil spécifique avec React Query
 export const useScanProfile = (profileId) => {
   return useQuery({
     queryKey: ['scanProfile', profileId],

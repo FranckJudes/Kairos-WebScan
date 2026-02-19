@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../services/api'
 
-// Custom hook to fetch documents
 export function useDocuments() {
   return useQuery({
     queryKey: ['documents'],
@@ -9,7 +8,14 @@ export function useDocuments() {
   })
 }
 
-// Custom hook to fetch a single document
+export function useRecentDocuments(limit = 100) {
+  return useQuery({
+    queryKey: ['documents', 'recent', limit],
+    queryFn: () => api.getRecentDocuments(limit),
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  })
+}
+
 export function useDocument(id) {
   return useQuery({
     queryKey: ['documents', id],
@@ -42,6 +48,18 @@ export function usePerformOcr() {
     mutationFn: ({ documentId, config }) => api.performOcr(documentId, config),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['documents', variables.documentId] })
+    },
+  })
+}
+
+export function useDeleteDocument() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (documentId) => api.deleteDocument(documentId),
+    onSuccess: () => {
+      // Invalider toutes les requêtes liées aux documents
+      queryClient.invalidateQueries({ queryKey: ['documents'] })
     },
   })
 }

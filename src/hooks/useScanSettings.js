@@ -15,10 +15,8 @@ const DEFAULT_SETTINGS = {
 }
 
 export const useScanSettings = (selectedProfileId) => {
-  // Récupérer le profil sélectionné avec React Query
   const { data: profile, isLoading, error } = useScanProfile(selectedProfileId)
 
-  // Calculer les paramètres de scan en fonction du profil
   const scanSettings = useMemo(() => {
     if (!profile) {
       return DEFAULT_SETTINGS

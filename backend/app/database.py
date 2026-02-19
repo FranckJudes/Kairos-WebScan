@@ -16,7 +16,7 @@ client: AsyncIOMotorClient = None
 
 async def connect_to_mongo():
     """
-    Établit la connexion à MongoDB et initialise Beanie
+        Établit la connexion à MongoDB et initialise Beanie
     """
     global client
 
@@ -34,7 +34,7 @@ async def connect_to_mongo():
 
 async def close_mongo_connection():
     """
-    Ferme la connexion à MongoDB
+         Ferme la connexion à MongoDB
     """
     global client
     if client:

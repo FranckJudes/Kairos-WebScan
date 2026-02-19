@@ -9,16 +9,14 @@ from beanie import Document, Indexed
 class DocumentType(Document):
     """Modèle pour les types de documents (typologie)"""
 
-    # Champs principaux
     name: str
-    code: str  # Code unique pour le type
+    code: str  
     description: Optional[str] = None
-    icon: str = "folder"  # Material icon name
-    parent_id: Optional[str] = None  # ObjectId du parent en string
-    order: int = 0  # Ordre d'affichage
+    icon: str = "folder"  
+    parent_id: Optional[str] = None 
+    order: int = 0  
     is_active: bool = True
 
-    # Dates
     created_at: datetime = datetime.utcnow()
     updated_at: datetime = datetime.utcnow()
 
@@ -31,7 +29,6 @@ class DocumentType(Document):
         ]
 
 
-# Données initiales pour la typologie
 INITIAL_TYPOLOGY = [
     {
         "name": "Documents Administratifs",
@@ -54,7 +51,7 @@ INITIAL_TYPOLOGY = [
         "code": "CIN",
         "description": "Carte d'identité nationale",
         "icon": "credit_card",
-        "parent_id": None,  # Sera mis à jour après insertion
+        "parent_id": None,  
         "order": 1
     },
     {
@@ -62,7 +59,7 @@ INITIAL_TYPOLOGY = [
         "code": "PASSPORT",
         "description": "Passeport",
         "icon": "book",
-        "parent_id": None,  # Sera mis à jour après insertion
+        "parent_id": None,  
         "order": 2
     },
     {
@@ -70,7 +67,7 @@ INITIAL_TYPOLOGY = [
         "code": "DRIVER_LICENSE",
         "description": "Permis de conduire",
         "icon": "directions_car",
-        "parent_id": None,  # Sera mis à jour après insertion
+        "parent_id": None,  
         "order": 3
     },
     {
@@ -86,7 +83,7 @@ INITIAL_TYPOLOGY = [
         "code": "INVOICES",
         "description": "Factures et bons de commande",
         "icon": "receipt",
-        "parent_id": None,  # Sera mis à jour après insertion
+        "parent_id": None,  
         "order": 1
     },
     {
@@ -94,7 +91,7 @@ INITIAL_TYPOLOGY = [
         "code": "ELEC_INVOICE",
         "description": "Facture d'électricité",
         "icon": "bolt",
-        "parent_id": None,  # Sera mis à jour après insertion
+        "parent_id": None,  
         "order": 1
     },
     {
@@ -102,7 +99,7 @@ INITIAL_TYPOLOGY = [
         "code": "WATER_INVOICE",
         "description": "Facture d'eau",
         "icon": "water_drop",
-        "parent_id": None,  # Sera mis à jour après insertion
+        "parent_id": None,  
         "order": 2
     },
     {
@@ -110,7 +107,7 @@ INITIAL_TYPOLOGY = [
         "code": "TEL_INVOICE",
         "description": "Facture internet ou téléphone",
         "icon": "phone",
-        "parent_id": None,  # Sera mis à jour après insertion
+        "parent_id": None,  
         "order": 3
     },
     {
@@ -118,7 +115,7 @@ INITIAL_TYPOLOGY = [
         "code": "BANK_STATEMENTS",
         "description": "Relevés de compte bancaire",
         "icon": "account_balance_wallet",
-        "parent_id": None,  # Sera mis à jour après insertion
+        "parent_id": None,  
         "order": 2
     },
     {
@@ -134,7 +131,7 @@ INITIAL_TYPOLOGY = [
         "code": "CONTRACTS",
         "description": "Contrats divers",
         "icon": "description",
-        "parent_id": None,  # Sera mis à jour après insertion
+        "parent_id": None,  
         "order": 1
     },
     {
@@ -142,7 +139,7 @@ INITIAL_TYPOLOGY = [
         "code": "RENTAL_CONTRACT",
         "description": "Bail ou contrat de location",
         "icon": "home",
-        "parent_id": None,  # Sera mis à jour après insertion
+        "parent_id": None,  
         "order": 1
     },
     {
@@ -150,7 +147,7 @@ INITIAL_TYPOLOGY = [
         "code": "EMPLOYMENT_CONTRACT",
         "description": "Contrat de travail",
         "icon": "work",
-        "parent_id": None,  # Sera mis à jour après insertion
+        "parent_id": None,  
         "order": 2
     },
     {
@@ -166,7 +163,7 @@ INITIAL_TYPOLOGY = [
         "code": "PRESCRIPTIONS",
         "description": "Ordonnances médicales",
         "icon": "medication",
-        "parent_id": None,  # Sera mis à jour après insertion
+        "parent_id": None,  
         "order": 1
     },
     {
@@ -174,7 +171,7 @@ INITIAL_TYPOLOGY = [
         "code": "LAB_RESULTS",
         "description": "Résultats d'analyses médicales",
         "icon": "biotech",
-        "parent_id": None,  # Sera mis à jour après insertion
+        "parent_id": None,  
         "order": 2
     },
     {

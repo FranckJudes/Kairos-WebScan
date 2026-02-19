@@ -83,7 +83,7 @@ class ConnectionManager:
             self.disconnect(connection)
 
         if failed_connections:
-            logger.warning(f"⚠️ {len(failed_connections)} connexion(s) échouée(s) lors du broadcast")
+            logger.warning(f"{len(failed_connections)} connexion(s) échouée(s) lors du broadcast")
 
 
     async def notify_pages_classified(self, data: dict):

@@ -16,9 +16,6 @@ async def get_scan_image(path: str):
     try:
         encoded_path = path.replace("/", "\\") if "/" not in path else path
         image_url = f"{SCAN_API_BASE_URL}/api/WiaScanner/image?path={encoded_path}"
-
-        print(f"Proxying image request to: {image_url}")
-
         response = requests.get(image_url, stream=True)
 
         if response.status_code != 200:

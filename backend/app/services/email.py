@@ -135,7 +135,7 @@ class EmailTemplate:
                 {verification_url}
             </p>
             <div class="alert">
-                <strong>⚠️ Important :</strong> Ce lien expire dans 24 heures.
+                <strong> Important :</strong> Ce lien expire dans 24 heures.
             </div>
             <p>Si vous n'avez pas créé de compte Kairos WebScan, vous pouvez ignorer cet email.</p>
         """
@@ -216,19 +216,15 @@ class EmailService:
             True si l'envoi a réussi, False sinon
         """
         try:
-            # Créer le message
             msg = MIMEMultipart('alternative')
             msg['Subject'] = subject
             msg['From'] = f"{self.config.from_name} <{self.config.from_email}>"
             msg['To'] = f"{to_name} <{to_email}>" if to_name else to_email
 
-            # Attacher le contenu HTML
             html_part = MIMEText(html_content, 'html', 'utf-8')
             msg.attach(html_part)
 
-            # Connexion SMTP
             if self.config.smtp_use_tls:
-                # SMTP avec TLS (ex: Gmail, SendGrid)
                 server = smtplib.SMTP(self.config.smtp_server, self.config.smtp_port)
                 server.starttls()
                 if self.config.smtp_username and self.config.smtp_password:
@@ -323,7 +319,6 @@ class EmailService:
         )
 
 
-# Instance singleton pour utilisation dans l'application
 def get_email_service() -> EmailService:
     """Retourne l'instance du service d'email"""
     return EmailService()

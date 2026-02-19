@@ -1,4 +1,4 @@
-const SCAN_API_BASE_URL = import.meta.env.VITE_SCAN_API_URL || 'http://192.168.100.12:5000'
+const SCAN_API_BASE_URL = import.meta.env.VITE_SCAN_API_URL;
 
 // Constants pour les paramètres de scan WIA
 export const ScanSource = {

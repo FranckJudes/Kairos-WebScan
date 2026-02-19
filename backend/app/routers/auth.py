@@ -41,7 +41,6 @@ router = APIRouter(
 
 security = HTTPBearer(auto_error=False)
 
-# Configuration Google OAuth
 oauth = OAuth()
 oauth.register(
     name='google',
@@ -54,7 +53,6 @@ oauth.register(
 )
 
 
-# ============= DEPENDENCIES =============
 
 def get_current_user(
     access_token: Optional[str] = Cookie(None),
@@ -69,7 +67,6 @@ def get_current_user(
     if credentials:
         token = credentials.credentials
 
-    # Fallback sur le cookie s'il n'y a pas de header
     if not token and access_token:
         token = access_token
 
@@ -228,7 +225,6 @@ async def login(
 
     access_token = create_user_token(str(user.id))
     
-    # Définir le cookie HttpOnly
     response.set_cookie(
         key="access_token",
         value=access_token,
@@ -613,7 +609,6 @@ async def check_password_strength(password: str):
     else:
         suggestions.append("Au moins un caractère spécial (!@#$%^&*...)")
 
-    # Label
     labels = {
         0: "Très faible",
         1: "Très faible",

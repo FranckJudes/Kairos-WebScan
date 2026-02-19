@@ -34,7 +34,6 @@ async def websocket_endpoint(
     """
     manager = get_manager()
 
-    # Générer un ID client si non fourni
     if not client_id:
         import uuid
         client_id = str(uuid.uuid4())[:8]
@@ -42,7 +41,6 @@ async def websocket_endpoint(
     await manager.connect(websocket, client_id)
 
     try:
-        # Envoyer un message de bienvenue
         await websocket.send_json({
             "type": "connected",
             "data": {

@@ -8,7 +8,6 @@ from beanie import Document, Indexed
 from pydantic import Field, EmailStr
 
 
-# ==================== ENUMS ====================
 
 class UserStatusEnum(str, Enum):
     """Statuts possibles d'un utilisateur"""
@@ -26,31 +25,25 @@ class LicenseTypeEnum(str, Enum):
     ENTERPRISE = "enterprise"
 
 
-# ==================== MODELS ====================
 
 class License(Document):
     """
     Modèle de licence utilisateur avec gestion des quotas
     """
-    user_id: Optional[int] = None  # Sera remplacé par une référence ObjectId
+    user_id: Optional[int] = None  
 
-    # Type de licence
     license_type: LicenseTypeEnum = LicenseTypeEnum.FREE
 
-    # Quotas de scans
     scans_per_month: int = 10
     scans_used_this_month: int = 0
 
-    # Quotas de stockage
     documents_storage_mb: int = 100
     documents_used_storage_mb: float = 0.0
 
-    # Dates
     expires_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
-    # Features disponibles
     ocre_available: bool = False
     cloud_storage_available: bool = False
     api_access_available: bool = False
@@ -91,14 +84,12 @@ class RecentDocument(Document):
     """
     Modèle pour suivre les documents récents d'un utilisateur
     """
-    user_id: str  # Référence ObjectId en string
+    user_id: str  
 
-    # Informations du document
-    document_id: str  # Référence au document
+    document_id: str 
     document_name: str
     document_type: str
 
-    # Date d'accès
     accessed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
@@ -114,14 +105,13 @@ class DocumentModel(Document):
     """
     Modèle pour les documents uploadés
     """
-    user_id: str  # Propriétaire du document
+    user_id: str  
     filename: Indexed(str)
     original_name: str
     mime_type: str
     size_bytes: int
     storage_path: str
     
-    # Métadonnées
     document_type: str = "OTHERS"  # Code de la typologie
     status: str = "PROCESSED"  # PROCESSED, ERROR, PENDING
     
@@ -145,12 +135,10 @@ class BannetteModel(Document):
     name: Indexed(str)
     description: Optional[str] = None
     
-    # État de la classification
     pages_order: List[Dict[str, Any]] = []  # Liste des pages (objets) ordonnées
     classified_pages: Dict[str, Any] = {}   # Structure de l'arbre classé
     total_pages: int = 0
     
-    # Dates
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -260,7 +248,6 @@ class ScanProfile(Document):
         ]
 
 
-# ==================== HELPERS ====================
 
 async def init_default_models():
     """
@@ -282,5 +269,4 @@ async def init_default_models():
             default="1"
         )
         await default_profile.insert()
-    else:
-        print(f"✅ {profiles_count} profil(s) de scan trouvé(s)")
+   

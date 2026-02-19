@@ -33,15 +33,12 @@ class UserService:
         Raises:
             ValueError: Si l'email existe déjà
         """
-        # Vérifier si l'email existe déjà
         existing_user = await User.find_one(User.email == email)
         if existing_user:
             raise ValueError("Un utilisateur avec cet email existe déjà")
 
-        # Hasher le mot de passe
         password_hash = PasswordManager.hash_password(password)
 
-        # Créer l'utilisateur
         user = User(
             email=email,
             password_hash=password_hash,
@@ -53,7 +50,6 @@ class UserService:
 
         await user.insert()
 
-        # Créer la licence FREE par défaut
         license = License(
             license_type=LicenseTypeEnum.FREE,
             scans_per_month=10,
@@ -70,7 +66,6 @@ class UserService:
 
         await license.insert()
 
-        # Lier la licence à l'utilisateur
         user.license_id = str(license.id)
         await user.save()
 
@@ -114,11 +109,9 @@ class UserService:
         if not user:
             return False
 
-        # Vérifier l'expiration du token
         if user.email_verification_expires and user.email_verification_expires < datetime.utcnow():
             return False
 
-        # Marquer l'email comme vérifié
         user.is_email_verified = True
         user.status = "active"
         user.email_verification_token = None
@@ -144,7 +137,6 @@ class UserService:
         if not user:
             return None
 
-        # Générer le token
         reset_token = TokenManager.create_password_reset_token()
         expires_at = TokenManager.get_password_reset_expiration()
 

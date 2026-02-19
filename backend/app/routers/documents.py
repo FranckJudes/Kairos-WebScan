@@ -20,7 +20,6 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 def _document_to_response(doc: DocumentModel) -> DocumentResponse:
     """Convertit un modèle DocumentModel en DocumentResponse"""
-    # L'URL est construite pour être servie par le endpoint static de main.py
     url = f"/uploads/{doc.filename}"
     return DocumentResponse(
         id=str(doc.id),
@@ -43,19 +42,15 @@ async def upload_document(
 ):
     """Upload un seul document"""
     try:
-        # Générer un nom de fichier unique
         ext = os.path.splitext(file.filename)[1]
         unique_filename = f"{uuid.uuid4()}{ext}"
         file_path = os.path.join(UPLOAD_DIR, unique_filename)
 
-        # Sauvegarder le fichier sur le disque
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        # Créer l'entrée en base de données
         file_size = os.path.getsize(file_path)
 
-        # Détecter le type MIME correct à partir de l'extension
         ext_lower = ext.lower()
         mime_type_map = {
             '.pdf': 'application/pdf',
@@ -80,7 +75,7 @@ async def upload_document(
             size_bytes=file_size,
             storage_path=file_path,
             document_type="OTHERS",
-            num_pages=0  # Sera mis à jour après traitement
+            num_pages=0 
         )
         await doc.insert()
 
@@ -115,7 +110,6 @@ async def upload_documents_batch(
 
             file_size = os.path.getsize(file_path)
 
-            # Détecter le type MIME correct à partir de l'extension
             ext_lower = ext.lower()
             mime_type_map = {
                 '.pdf': 'application/pdf',
@@ -159,6 +153,18 @@ async def list_documents(
     
     return [_document_to_response(doc) for doc in docs]
 
+@router.get("/documents/recent", response_model=List[DocumentResponse])
+async def get_recent_documents(
+    limit: int = Query(10, ge=1, le=20),
+    current_user: User = Depends(get_current_user_active)
+):
+    """Retourne les documents récemment importés par l'utilisateur"""
+    docs = await DocumentModel.find(
+        DocumentModel.user_id == str(current_user.id)
+    ).limit(limit).sort("-created_at").to_list()
+    
+    return [_document_to_response(doc) for doc in docs]
+
 @router.get("/documents/{document_id}", response_model=DocumentResponse)
 async def get_document(
     document_id: str,
@@ -181,7 +187,6 @@ async def delete_document(
     if not doc or doc.user_id != str(current_user.id):
         raise HTTPException(status_code=404, detail="Document non trouvé")
     
-    # Supprimer le fichier physique
     if os.path.exists(doc.storage_path):
         os.remove(doc.storage_path)
         

@@ -13,7 +13,6 @@ UPLOAD_DIR = "uploads"
 
 @celery_app.task(name="app.tasks.send_verification_email")
 def send_verification_email(to_email: str, to_name: str, verification_token: str):
-    """Tâche Celery pour envoyer l'email de vérification"""
     email_service = get_email_service()
     success = email_service.send_verification_email(to_email, to_name, verification_token)
     if not success:
@@ -23,7 +22,6 @@ def send_verification_email(to_email: str, to_name: str, verification_token: str
 
 @celery_app.task(name="app.tasks.send_password_reset_email")
 def send_password_reset_email(to_email: str, to_name: str, reset_token: str):
-    """Tâche Celery pour envoyer l'email de réinitialisation de mot de passe"""
     email_service = get_email_service()
     success = email_service.send_password_reset_email(to_email, to_name, reset_token)
     if not success:
@@ -57,7 +55,6 @@ def process_pdf_document(self, document_id: str, filename: str, user_id: str):
     """
 
     try:
-        # Chemin du fichier PDF
         pdf_path = Path(UPLOAD_DIR) / filename
 
         if not pdf_path.exists():
@@ -100,7 +97,6 @@ def process_pdf_document(self, document_id: str, filename: str, user_id: str):
                 )
             )
 
-            # Publier le résultat final
             result = {
                 "status": "completed",
                 "document_id": document_id,

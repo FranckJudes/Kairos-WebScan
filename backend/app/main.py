@@ -55,7 +55,6 @@ app.include_router(documents_router.router)
 app.include_router(bannettes_router.router)
 
 
-# ==================== EVENTS ====================
 
 @app.on_event("startup")
 async def startup_event():
@@ -77,10 +76,8 @@ async def startup_event():
         ]
     )
 
-    # Initialiser le gestionnaire WebSocket
     init_websocket()
 
-    # Démarrer le listener Redis pour les mises à jour en temps réel
     await start_redis_listener()
 
     redis_host = os.getenv("REDIS_HOST", "localhost")
@@ -95,11 +92,7 @@ async def startup_event():
         password=redis_password
     )
 
-    if cache.is_available():
-        print("Cache Redis connecté")
-    else:
-        print("Cache Redis non disponible (le serveur fonctionnera sans cache)")
-
+    
     profiles_count = await ScanProfile.count()
 
     if profiles_count == 0:
@@ -116,8 +109,6 @@ async def startup_event():
             default="1"
         )
         await default_profile.insert()
-    else:
-        print(f"{profiles_count} profil(s) de scan trouvé(s)")
 
     typology_count = await DocumentType.count()
     if typology_count == 0:
@@ -130,7 +121,6 @@ async def startup_event():
 
         for type_data in INITIAL_TYPOLOGY:
             if type_data["parent_id"] is not None:
-                # Trouver le parent par code
                 parent_code = None
                 if type_data["code"] in ["CIN", "PASSPORT", "DRIVER_LICENSE"]:
                     parent_code = "IDENTITY"
@@ -153,13 +143,9 @@ async def startup_event():
                 doc_type = DocumentType(**type_data)
                 await doc_type.insert()
 
-    else:
-        print(f"✅ {typology_count} type(s) de document trouvé(s)")
-
-
+  
 @app.on_event("shutdown")
 async def shutdown_event():
-    """Fermeture des connexions"""
     await stop_redis_listener()
     await close_mongo_connection()
 
@@ -167,17 +153,14 @@ async def shutdown_event():
 
 @app.get("/uploads/{filename}")
 async def get_uploaded_file(filename: str):
-    """Servir les fichiers uploadés avec support CORS"""
     file_path = os.path.join(UPLOAD_DIR, filename)
     if not os.path.exists(file_path):
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Fichier non trouvé")
 
-    # Détecter le type MIME correct pour éviter ORB
     import mimetypes
     media_type, _ = mimetypes.guess_type(file_path)
     if not media_type:
-        # Fallback basé sur l'extension
         if filename.endswith('.pdf'):
             media_type = "application/pdf"
         elif filename.endswith(('.jpg', '.jpeg')):
@@ -214,7 +197,6 @@ async def get_page_image(document_id: str, filename: str):
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Page non trouvée")
 
-    # Détecter le type MIME
     import mimetypes
     media_type, _ = mimetypes.guess_type(file_path)
     if not media_type:
