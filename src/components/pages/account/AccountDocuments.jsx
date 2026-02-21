@@ -298,37 +298,63 @@ const AccountDocuments = ({ user }) => {
     document.body.removeChild(link)
   }
 
-  const handleOpenDocument = (doc) => {
-    // Normaliser le document au même format que DocumentsContext
-    const normalizedDoc = {
-      ...doc,
-      name: doc.original_name || doc.filename,
-      type: doc.mime_type,
-      url: doc.url?.startsWith('/') ? `${API_BASE_URL}${doc.url}` : doc.url
+  const handleOpenDocument = async (doc) => {
+    try {
+      // Récupérer le document complet depuis l'API pour avoir tous les champs
+      const fullDoc = await api.getDocument(doc.id)
+      
+      // Normaliser le document au format attendu par DocumentsContext
+      const normalizedDoc = {
+        id: fullDoc.id,
+        filename: fullDoc.filename,
+        original_name: fullDoc.original_name,
+        name: fullDoc.original_name || fullDoc.filename,
+        file_type: fullDoc.document_type,
+        type: fullDoc.mime_type || fullDoc.document_type,
+        mime_type: fullDoc.mime_type,
+        size_bytes: fullDoc.size_bytes,
+        size: fullDoc.size_bytes,
+        url: fullDoc.url?.startsWith('/') 
+          ? `${API_BASE_URL}${fullDoc.url}` 
+          : (fullDoc.url || `${API_BASE_URL}/uploads/${fullDoc.filename}`),
+        document_type: fullDoc.document_type,
+        status: fullDoc.status,
+        numPages: fullDoc.num_pages || 1,
+        created_at: fullDoc.created_at,
+        updated_at: fullDoc.updated_at,
+        pages: fullDoc.pages || []
+      }
+      
+      // Ajouter au cache de la liste
+      queryClient.setQueryData(['documents', 'list'], (old) => {
+        const currentDocs = old?.documents || []
+        const exists = currentDocs.find(d => d.id === doc.id)
+        if (exists) {
+          // Mettre à jour le document existant
+          return {
+            ...old,
+            documents: currentDocs.map(d => d.id === doc.id ? normalizedDoc : d),
+            total: old?.total || currentDocs.length
+          }
+        }
+        // Ajouter le nouveau document
+        return {
+          ...old,
+          documents: [normalizedDoc, ...currentDocs],
+          total: (old?.total || 0) + 1
+        }
+      })
+      
+      // Définir le document comme sélectionné
+      setSelectedDocumentId(doc.id)
+      setSelectedPageNumber(1)
+      
+      // Naviguer vers l'accueil
+      navigate('/')
+    } catch (error) {
+      toast.error('Erreur lors de l\'ouverture du document')
+      console.error(error)
     }
-    
-    // Ajouter le document au cache de la liste pour que DocumentViewer le trouve
-    queryClient.setQueryData(['documents', 'list'], (old) => {
-      const currentDocs = old?.documents || []
-      const exists = currentDocs.find(d => d.id === doc.id)
-      if (exists) {
-        return old
-      }
-      return {
-        ...old,
-        documents: [normalizedDoc, ...currentDocs],
-        total: (old?.total || 0) + 1
-      }
-    })
-    
-    // Définir le document comme sélectionné dans le contexte
-    setSelectedDocumentId(doc.id)
-    
-    // Réinitialiser à la première page (comme lors de l'import)
-    setSelectedPageNumber(1)
-    
-    // Naviguer vers la page d'accueil où se trouve le DocumentViewer
-    navigate('/')
   }
 
   return (
