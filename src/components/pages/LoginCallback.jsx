@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
+import { LinkRounded, CheckRounded } from '@mui/icons-material'
 
 const LoginCallback = () => {
     const navigate = useNavigate()
@@ -19,7 +20,7 @@ const LoginCallback = () => {
                         <div className="aspect-square w-full rounded-3xl overflow-hidden shadow-2xl transform -rotate-3 hover:rotate-0 transition-transform duration-700 bg-gradient-to-br from-neutral-800 to-neutral-900 border border-white/10 flex items-center justify-center">
                             <div className="absolute inset-0 bg-cover bg-center mix-blend-overlay opacity-60" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&q=80')", backgroundPosition: 'center' }}></div>
                             <div className="relative z-20 text-white text-center p-8">
-                                <span className="material-symbols-outlined text-6xl mb-6 opacity-80">link</span>
+                                <LinkRounded className="text-6xl mb-6 opacity-80" />
                                 <h2 className="text-3xl font-bold mb-4 tracking-tight">Connexion sécurisée</h2>
                                 <p className="text-neutral-400 text-lg leading-relaxed">Établissement d'une connexion sécurisée avec Kairos WebScan.</p>
                             </div>
@@ -57,7 +58,7 @@ const LoginCallback = () => {
                     <div className="bg-[#f7f7f7] dark:bg-neutral-900 rounded-2xl p-6 space-y-4">
                         <div className="flex items-center gap-3">
                             <div className="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                                <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-[16px]">check</span>
+                                <CheckRounded className="text-green-600 dark:text-green-400 text-[16px]" />
                             </div>
                             <span className="text-sm text-neutral-700 dark:text-neutral-300">Authentification en cours</span>
                         </div>

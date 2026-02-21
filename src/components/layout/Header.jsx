@@ -9,6 +9,17 @@ import { useAuth } from '../../contexts/AuthContext'
 import AccountMenu from '../AccountMenu'
 import LoginRounded from '@mui/icons-material/LoginRounded'
 import toast from 'react-hot-toast'
+import {
+  CloseRounded,
+  FolderOpenRounded,
+  FolderRounded,
+  DeleteRounded,
+  ChevronLeftRounded,
+  ChevronRightRounded,
+  DescriptionRounded,
+  UploadFileRounded,
+  SearchRounded
+} from '@mui/icons-material'
 
 function BannettesModal({ isOpen, onClose, bannettes, onLoadBannette, onDeleteBannette, isDeleting, currentPage, totalPages, total, goToPage, prevPage, nextPage }) {
   const formatDate = (dateString) => {
@@ -43,7 +54,7 @@ function BannettesModal({ isOpen, onClose, bannettes, onLoadBannette, onDeleteBa
             onClick={onClose}
             className="p-1 rounded hover:bg-[#f3f2f1] dark:hover:bg-dark-hover text-[#605e5c] dark:text-dark-text"
           >
-            <span className="material-symbols-outlined">close</span>
+            <CloseRounded />
           </button>
         </div>
 
@@ -51,7 +62,7 @@ function BannettesModal({ isOpen, onClose, bannettes, onLoadBannette, onDeleteBa
         <div className="flex-1 overflow-auto p-4">
           {bannettes.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <span className="material-symbols-outlined text-[50px] text-[#c8c6c4] dark:text-dark-textTertiary mb-3">folder_open</span>
+              <FolderOpenRounded className="text-[50px] text-[#c8c6c4] dark:text-dark-textTertiary mb-3" />
               <p className="text-sm text-[#605e5c] dark:text-dark-text">
                 Aucune bannette sauvegardée
               </p>
@@ -73,7 +84,7 @@ function BannettesModal({ isOpen, onClose, bannettes, onLoadBannette, onDeleteBa
                     <tr key={bannette.id} className="hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors border-b border-[#edebe9] dark:border-dark-border last:border-b-0">
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex items-center space-x-2">
-                          <span className="material-symbols-outlined text-[20px] text-[#106EBE] dark:text-blue-400">folder</span>
+                          <FolderRounded className="text-[20px] text-[#106EBE] dark:text-blue-400" />
                           <span className="text-sm font-medium text-[#605e5c] dark:text-dark-text truncate max-w-[200px]">
                             {bannette.name}
                           </span>
@@ -101,7 +112,7 @@ function BannettesModal({ isOpen, onClose, bannettes, onLoadBannette, onDeleteBa
                             className="p-2 bg-[#106EBE] dark:bg-blue-600 hover:bg-[#005a9e] dark:hover:bg-blue-700 text-white rounded transition-colors"
                             title="Charger"
                           >
-                            <span className="material-symbols-outlined text-[18px]">folder_open</span>
+                            <FolderOpenRounded className="text-[18px]" />
                           </button>
                           <button
                             onClick={() => onDeleteBannette(bannette)}
@@ -109,7 +120,7 @@ function BannettesModal({ isOpen, onClose, bannettes, onLoadBannette, onDeleteBa
                             className="p-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-500 dark:hover:bg-red-600 text-red-600 dark:text-red-400 hover:text-white rounded transition-colors disabled:opacity-50"
                             title="Supprimer"
                           >
-                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                            <DeleteRounded className="text-[18px]" />
                           </button>
                         </div>
                       </td>
@@ -141,7 +152,7 @@ function BannettesModal({ isOpen, onClose, bannettes, onLoadBannette, onDeleteBa
                 className="p-1 hover:bg-[#f3f2f1] dark:hover:bg-dark-hover rounded transition-colors disabled:opacity-50"
                 title="Page précédente"
               >
-                <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+                <ChevronLeftRounded className="text-[18px]" />
               </button>
               <span className="text-xs text-[#605e5c] dark:text-dark-text px-2">
                 Page {currentPage + 1} / {totalPages}
@@ -152,7 +163,7 @@ function BannettesModal({ isOpen, onClose, bannettes, onLoadBannette, onDeleteBa
                 className="p-1 hover:bg-[#f3f2f1] dark:hover:bg-dark-hover rounded transition-colors disabled:opacity-50"
                 title="Page suivante"
               >
-                <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                <ChevronRightRounded className="text-[18px]" />
               </button>
             </div>
             <button
@@ -232,7 +243,7 @@ function Header({ onToggleSidebar, isSidebarOpen }) {
           {/* Bouton hamburger visible uniquement sur mobile */}
           <HamburgerButton onClick={onToggleSidebar} isOpen={isSidebarOpen} />
 
-          <span className="material-symbols-outlined text-[20px]">description</span>
+          <DescriptionRounded className="text-[20px]" />
           <span className="font-semibold text-sm hidden xs:inline sm:inline">Kairos WebScan</span>
           <div className="h-4 w-px bg-white/20 mx-2 hidden sm:block"></div>
           <div className="flex items-center space-x-1 hidden sm:flex">
@@ -241,14 +252,14 @@ function Header({ onToggleSidebar, isSidebarOpen }) {
               className="p-1.5 hover:bg-white/10 dark:hover:bg-white/20 rounded transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               title="Bannettes"
             >
-              <span className="material-symbols-outlined text-[18px]">folder_open</span>
+              <FolderOpenRounded className="text-[18px]" />
             </button>
             <button
               onClick={() => document.getElementById('header-file-input')?.click()}
               className="p-1.5 hover:bg-white/10 dark:hover:bg-white/20 rounded transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               title="Importer des documents"
             >
-              <span className="material-symbols-outlined text-[18px]">upload_file</span>
+              <UploadFileRounded className="text-[18px]" />
             </button>
             <input
               id="header-file-input"
@@ -269,7 +280,7 @@ function Header({ onToggleSidebar, isSidebarOpen }) {
         <div className="flex items-center space-x-2 sm:space-x-4">
           {/* Barre de recherche - cachée sur très petits écrans, expandable sur mobile */}
           <div className={`flex items-center bg-white/10 rounded px-2 py-1 h-7 transition-all duration-300 ${isSearchExpanded ? 'w-auto' : 'w-32'} hidden xs:flex`}>
-            <span className="material-symbols-outlined text-[16px] mr-2">search</span>
+            <SearchRounded className="text-[16px] mr-2" />
             <input
               className="bg-transparent border-none focus:ring-0 text-xs p-0 w-20 xs:w-24 sm:w-40 placeholder-white/60"
               placeholder="Search..."
@@ -280,7 +291,7 @@ function Header({ onToggleSidebar, isSidebarOpen }) {
           </div>
           {/* Bouton de recherche pour très petits écrans */}
           <button className="xs:hidden p-1.5 hover:bg-white/10 dark:hover:bg-white/20 rounded transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">
-            <span className="material-symbols-outlined text-[18px]">search</span>
+            <SearchRounded className="text-[18px]" />
           </button>
           {/* Bouton toggle dark mode */}
           <DarkModeToggle />

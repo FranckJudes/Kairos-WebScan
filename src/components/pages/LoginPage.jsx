@@ -4,8 +4,12 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useAuth } from '../../contexts/AuthContext'
 import { useState } from 'react'
-import VisibilityRounded from '@mui/icons-material/VisibilityRounded'
-import VisibilityOffRounded from '@mui/icons-material/VisibilityOffRounded'
+import {
+  VisibilityRounded,
+  VisibilityOffRounded,
+  CodeRounded,
+  ArrowForwardRounded
+} from '@mui/icons-material'
 
 const loginSchema = z.object({
   email: z.string().min(1, 'L\'email est requis').email('Email invalide'),
@@ -57,7 +61,7 @@ const LoginPage = () => {
             <div className="aspect-square w-full rounded-3xl overflow-hidden shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-700 bg-gradient-to-br from-neutral-800 to-neutral-900 border border-white/10 flex items-center justify-center">
               <div className="absolute inset-0 bg-cover bg-center mix-blend-overlay opacity-60" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80')", backgroundPosition: 'center' }}></div>
               <div className="relative z-20 text-white text-center p-8">
-                <span className="material-symbols-outlined text-6xl mb-6 opacity-80">deployed_code</span>
+                <CodeRounded className="text-6xl mb-6 opacity-80" />
                 <h2 className="text-3xl font-bold mb-4 tracking-tight">Kairos WebScan</h2>
                 <p className="text-neutral-400 text-lg leading-relaxed">Sécurisez vos applications web avec notre solution de scanning avancée.</p>
               </div>
@@ -228,7 +232,7 @@ const LoginPage = () => {
               ) : (
                 <>
                   <span>Se connecter</span>
-                  <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
+                  <ArrowForwardRounded className="text-[20px]" />
                 </>
               )}
             </button>

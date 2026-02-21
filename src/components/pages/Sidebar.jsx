@@ -21,6 +21,12 @@ import {
 } from '@dnd-kit/sortable'
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
+import {
+  FolderOpenRounded,
+  DeleteRounded,
+  AddRounded,
+  CloudUploadRounded
+} from '@mui/icons-material'
 
 function Sidebar() {
   const {
@@ -197,7 +203,7 @@ function Sidebar() {
               />
             )}
             <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#605e5c] dark:text-dark-text flex items-center">
-              <span className="material-symbols-outlined text-[16px] mr-2">folder_open</span>
+              <FolderOpenRounded className="text-[16px] mr-2" />
               Pages
             </h2>
           </div>
@@ -208,11 +214,11 @@ function Sidebar() {
                 className="hover:bg-[#e1dfdd] dark:hover:bg-dark-hover p-1 rounded transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
                 title={`Supprimer ${selectedPageIds.size} page(s)`}
               >
-                <span className="material-symbols-outlined text-[18px] text-red-600 dark:text-red-400">delete</span>
+                <DeleteRounded className="text-[18px] text-red-600 dark:text-red-400" />
               </button>
             )}
             <label className="cursor-pointer hover:bg-[#e1dfdd] dark:hover:bg-dark-hover p-1 rounded transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center" title="Add document">
-              <span className="material-symbols-outlined text-[18px] text-[#106EBE] dark:text-blue-400">add</span>
+              <AddRounded className="text-[18px] text-[#106EBE] dark:text-blue-400" />
               <input
                 type="file"
                 className="hidden"
@@ -239,7 +245,7 @@ function Sidebar() {
               className="cursor-pointer group"
             >
               <div className="border-2 border-dashed border-[#c8c6c4] dark:border-dark-borderLight rounded-lg p-8 text-center hover:border-[#106EBE] hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-all">
-                <span className="material-symbols-outlined text-[#c8c6c4] dark:text-dark-textTertiary text-4xl mb-2 group-hover:text-[#106EBE] dark:group-hover:text-blue-400 transition-colors">cloud_upload</span>
+                <CloudUploadRounded className="text-[#c8c6c4] dark:text-dark-textTertiary text-4xl mb-2 group-hover:text-[#106EBE] dark:group-hover:text-blue-400 transition-colors" />
                 <p className="text-[10px] font-medium text-[#c8c6c4] dark:text-dark-textTertiary group-hover:text-[#106EBE] dark:group-hover:text-blue-400 transition-colors">DROP FILES HERE</p>
                 <p className="text-[9px] text-[#c8c6c4] dark:text-dark-textTertiary mt-2">or click to browse</p>
               </div>

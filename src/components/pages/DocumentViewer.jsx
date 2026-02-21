@@ -11,6 +11,26 @@ import { Cropper } from 'react-cropper'
 import 'cropperjs/dist/cropper.css'
 import * as pdfjsLib from 'pdfjs-dist'
 import { api } from '../../services/api'
+import {
+  CloudUploadRounded,
+  FolderOpenRounded,
+  ReorderRounded,
+  SaveRounded,
+  DeleteRounded,
+  ZoomOutRounded,
+  ZoomInRounded,
+  RotateLeftRounded,
+  RotateRightRounded,
+  LoopRounded,
+  CropRounded,
+  CheckRounded,
+  FullscreenRounded,
+  FullscreenExitRounded,
+  InfoRounded,
+  ChevronLeftRounded,
+  ChevronRightRounded,
+  FolderRounded
+} from '@mui/icons-material'
 
 function DocumentViewer() {
   const navigate = useNavigate()
@@ -228,7 +248,7 @@ function DocumentViewer() {
           className="w-full max-w-2xl"
         >
           <div className="border-2 border-dashed border-[#c8c6c4] dark:border-dark-borderLight rounded-lg p-8 md:p-16 text-center hover:border-[#106EBE] dark:hover:border-blue-400 hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-all cursor-pointer bg-white dark:bg-dark-bgSecondary">
-            <span className="material-symbols-outlined text-[60px] md:text-[80px] text-[#106EBE] dark:text-blue-400 mb-4 md:mb-6">cloud_upload</span>
+            <CloudUploadRounded className="text-[60px] md:text-[80px] text-[#106EBE] dark:text-blue-400 mb-4 md:mb-6" />
             <h2 className="text-xl md:text-2xl font-bold text-[#605e5c] dark:text-dark-text mb-4">Import your documents</h2>
             <p className="text-sm text-[#605e5c] dark:text-dark-text mb-6 max-w-md mx-auto">
               Drag & drop files here, or click to browse
@@ -238,7 +258,7 @@ function DocumentViewer() {
               <p>Maximum file size: 1 GB</p>
             </div>
             <label className="inline-flex items-center space-x-2 bg-[#106EBE] dark:bg-blue-600 hover:bg-[#005a9e] dark:hover:bg-blue-700 text-white px-6 md:px-8 py-3 md:py-4 rounded-full shadow-lg cursor-pointer transition-all transform hover:scale-105">
-              <span className="material-symbols-outlined">folder_open</span>
+              <FolderOpenRounded />
               <span className="font-semibold">Browse Files</span>
               <input
                 type="file"
@@ -276,21 +296,21 @@ function DocumentViewer() {
               onClick={goToOrganize}
               className="bg-[#106EBE] dark:bg-blue-600 hover:bg-[#005a9e] dark:hover:bg-blue-700 text-white px-3 md:px-4 py-2 rounded shadow-lg flex items-center space-x-1 md:space-x-2 transition-all text-xs md:text-sm font-medium min-w-[44px] min-h-[44px]"
             >
-              <span className="material-symbols-outlined text-[18px] md:text-[18px]">reorder</span>
+              <ReorderRounded className="text-[18px] md:text-[18px]" />
               <span className="hidden sm:inline">Réorganiser</span>
             </button>
             <button
               onClick={handleSave}
               className="bg-gray-600 dark:bg-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600 text-white px-3 md:px-4 py-2 rounded shadow-lg flex items-center space-x-1 md:space-x-2 transition-all text-xs md:text-sm font-medium min-w-[44px] min-h-[44px]"
             >
-              <span className="material-symbols-outlined text-[18px] md:text-[18px]">save</span>
+              <SaveRounded className="text-[18px] md:text-[18px]" />
               <span className="hidden sm:inline">Enregistrer</span>
             </button>
             <button
               onClick={handleClear}
               className="bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-600 text-white px-3 md:px-4 py-2 rounded shadow-lg flex items-center space-x-1 md:space-x-2 transition-all text-xs md:text-sm font-medium min-w-[44px] min-h-[44px]"
             >
-              <span className="material-symbols-outlined text-[18px] md:text-[18px]">delete</span>
+              <DeleteRounded className="text-[18px] md:text-[18px]" />
               <span className="hidden sm:inline">Vider</span>
             </button>
           </div>
@@ -320,7 +340,7 @@ function DocumentViewer() {
                         className="p-2 rounded hover:bg-white dark:hover:bg-dark-bg hover:shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                         title="Zoom arrière"
                       >
-                        <span className="material-symbols-outlined text-[20px] text-[#605e5c] dark:text-dark-text">zoom_out</span>
+                        <ZoomOutRounded className="text-[20px] text-[#605e5c] dark:text-dark-text" />
                       </button>
                       <button
                         onClick={resetZoom}
@@ -335,7 +355,7 @@ function DocumentViewer() {
                         className="p-2 rounded hover:bg-white dark:hover:bg-dark-bg hover:shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                         title="Zoom avant"
                       >
-                        <span className="material-symbols-outlined text-[20px] text-[#605e5c] dark:text-dark-text">zoom_in</span>
+                        <ZoomInRounded className="text-[20px] text-[#605e5c] dark:text-dark-text" />
                       </button>
                     </div>
 
@@ -349,7 +369,7 @@ function DocumentViewer() {
                     className="p-2 rounded hover:bg-white dark:hover:bg-dark-bg hover:shadow-sm transition-all"
                     title="Rotation gauche (-90°)"
                   >
-                    <span className="material-symbols-outlined text-[20px] text-[#605e5c] dark:text-dark-text">rotate_left</span>
+                    <RotateLeftRounded className="text-[20px] text-[#605e5c] dark:text-dark-text" />
                   </button>
                   <button
                     onClick={resetRotation}
@@ -364,7 +384,7 @@ function DocumentViewer() {
                     className="p-2 rounded hover:bg-white dark:hover:bg-dark-bg hover:shadow-sm transition-all"
                     title="Rotation droite (+90°)"
                   >
-                    <span className="material-symbols-outlined text-[20px] text-[#605e5c] dark:text-dark-text">rotate_right</span>
+                    <RotateRightRounded className="text-[20px] text-[#605e5c] dark:text-dark-text" />
                   </button>
                 </div>
 
@@ -383,12 +403,12 @@ function DocumentViewer() {
                   >
                     {isConvertingPdf ? (
                       <>
-                        <span className="material-symbols-outlined text-[20px] animate-spin">progress_activity</span>
+                        <LoopRounded className="text-[20px] animate-spin" />
                         <span className="hidden md:inline text-xs font-medium">Conversion...</span>
                       </>
                     ) : (
                       <>
-                        <span className="material-symbols-outlined text-[20px]">crop</span>
+                        <CropRounded className="text-[20px]" />
                         <span className="hidden md:inline text-xs font-medium">Rogner</span>
                       </>
                     )}
@@ -400,7 +420,7 @@ function DocumentViewer() {
                       className="p-2 rounded-lg bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-600 hover:shadow-sm transition-all flex items-center space-x-1"
                       title="Appliquer le rognage"
                     >
-                      <span className="material-symbols-outlined text-[20px] text-white">check</span>
+                      <CheckRounded className="text-[20px] text-white" />
                       <span className="hidden md:inline text-xs font-medium text-white">Appliquer</span>
                     </button>
                   )}
@@ -414,7 +434,7 @@ function DocumentViewer() {
                     }`}
                     title={isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
                   >
-                    <span className="material-symbols-outlined text-[20px]">{isFullscreen ? 'fullscreen_exit' : 'fullscreen'}</span>
+                    {isFullscreen ? <FullscreenExitRounded className="text-[20px]" /> : <FullscreenRounded className="text-[20px]" />}
                   </button>
                 </div>
               </div>
@@ -441,7 +461,7 @@ function DocumentViewer() {
           >
             {isConvertingPdf ? (
               <div className="flex flex-col items-center justify-center">
-                <span className="material-symbols-outlined text-[60px] md:text-[80px] text-[#106EBE] dark:text-blue-400 animate-spin mb-4" />
+                <LoopRounded className="text-[60px] md:text-[80px] text-[#106EBE] dark:text-blue-400 animate-spin mb-4" />
                 <p className="text-lg text-[#605e5c] dark:text-dark-text">Conversion du PDF en image...</p>
               </div>
             ) : isPdfDocument && isCropMode ? (
@@ -520,7 +540,7 @@ function DocumentViewer() {
               className="w-12 h-12 rounded-full bg-blue-400 shadow-lg border border-blue-300 flex items-center justify-center text-white hover:bg-blue-500 hover:scale-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 group"
               title="Page précédente"
             >
-              <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">chevron_left</span>
+              <ChevronLeftRounded className="text-[20px] group-hover:scale-110 transition-transform" />
             </button>
 
             <button
@@ -529,7 +549,7 @@ function DocumentViewer() {
               className="w-12 h-12 rounded-full bg-blue-400 shadow-lg border border-blue-300 flex items-center justify-center text-white hover:bg-blue-500 hover:scale-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 group"
               title="Zoom arrière"
             >
-              <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">zoom_out</span>
+              <ZoomOutRounded className="text-[20px] group-hover:scale-110 transition-transform" />
             </button>
 
             <button
@@ -539,8 +559,8 @@ function DocumentViewer() {
               }`}
               title={isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
             >
-              <span className={`material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform ${isFullscreen ? 'animate-pulse' : ''}`}>
-                {isFullscreen ? 'fullscreen_exit' : 'fullscreen'}
+              <span className={`text-[20px] group-hover:scale-110 transition-transform ${isFullscreen ? 'animate-pulse' : ''}`}>
+                {isFullscreen ? <FullscreenExitRounded /> : <FullscreenRounded />}
               </span>
             </button>
 
@@ -550,7 +570,7 @@ function DocumentViewer() {
               className="w-12 h-12 rounded-full bg-blue-400 shadow-lg border border-blue-300 flex items-center justify-center text-white hover:bg-blue-500 hover:scale-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 group"
               title="Zoom avant"
             >
-              <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">zoom_in</span>
+              <ZoomInRounded className="text-[20px] group-hover:scale-110 transition-transform" />
             </button>
 
             <button
@@ -560,12 +580,12 @@ function DocumentViewer() {
                   ? selectedPageNumber >= selectedDocument.numPages
                   : selectedDocument?.pages?.length
                     ? selectedPageNumber >= selectedDocument.pages.length
-                    : false 
+                    : false
               }
               className="w-12 h-12 rounded-full bg-blue-400 shadow-lg border border-blue-300 flex items-center justify-center text-white hover:bg-blue-500 hover:scale-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 group"
               title="Page suivante"
             >
-              <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">chevron_right</span>
+              <ChevronRightRounded className="text-[20px] group-hover:scale-110 transition-transform" />
             </button>
           </div>
         </div>
@@ -582,7 +602,7 @@ function DocumentViewer() {
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center space-x-3 mb-4">
-            <span className="material-symbols-outlined text-[40px] text-[#106EBE] dark:text-blue-400">folder</span>
+            <FolderRounded className="text-[40px] text-[#106EBE] dark:text-blue-400" />
             <div>
               <h2 className="text-xl font-bold text-[#605e5c] dark:text-dark-text">Enregistrer dans les bannettes</h2>
               <p className="text-sm text-[#c8c6c4] dark:text-dark-textTertiary mt-1">

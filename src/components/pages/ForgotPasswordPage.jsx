@@ -4,6 +4,16 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
+import {
+  LockResetRounded,
+  CheckCircleRounded,
+  MailRounded,
+  RefreshRounded,
+  LoginRounded,
+  PasswordRounded,
+  ArrowBackRounded,
+  SendRounded
+} from '@mui/icons-material'
 
 const forgotPasswordSchema = z.object({
   email: z.string().min(1, 'L\'email est requis').email('Email invalide')
@@ -48,7 +58,7 @@ const ForgotPasswordPage = () => {
               <div className="aspect-square w-full rounded-3xl overflow-hidden shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-700 bg-gradient-to-br from-neutral-800 to-neutral-900 border border-white/10 flex items-center justify-center">
                 <div className="absolute inset-0 bg-cover bg-center mix-blend-overlay opacity-60" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?w=800&q=80')", backgroundPosition: 'center' }}></div>
                 <div className="relative z-20 text-white text-center p-8">
-                  <span className="material-symbols-outlined text-6xl mb-6 opacity-80">lock_reset</span>
+                  <LockResetRounded className="text-6xl mb-6 opacity-80" />
                   <h2 className="text-3xl font-bold mb-4 tracking-tight">Réinitialisation</h2>
                   <p className="text-neutral-400 text-lg leading-relaxed">Suivez les instructions envoyées par email pour créer un nouveau mot de passe sécurisé.</p>
                 </div>
@@ -66,7 +76,7 @@ const ForgotPasswordPage = () => {
           <div className="w-full max-w-[440px] space-y-8">
             <div className="flex justify-center">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full">
-                <span className="material-symbols-outlined text-5xl text-green-600 dark:text-green-400">check_circle</span>
+                <CheckCircleRounded className="text-5xl text-green-600 dark:text-green-400" />
               </div>
             </div>
 
@@ -82,7 +92,7 @@ const ForgotPasswordPage = () => {
             <div className="bg-[#f7f7f7] dark:bg-neutral-900 rounded-2xl p-6 space-y-4">
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                  <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-[20px]">mail</span>
+                  <MailRounded className="text-blue-600 dark:text-blue-400 text-[20px]" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-[#141414] dark:text-neutral-200 mb-1">
@@ -123,7 +133,7 @@ const ForgotPasswordPage = () => {
                 }}
                 className="w-full h-12 flex items-center justify-center gap-2 px-4 border border-neutral-200 dark:border-neutral-800 rounded-lg bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-sm font-semibold text-[#141414] dark:text-white"
               >
-                <span className="material-symbols-outlined text-[20px]">refresh</span>
+                <RefreshRounded className="text-[20px]" />
                 <span>Renvoyer l'email</span>
               </button>
 
@@ -131,7 +141,7 @@ const ForgotPasswordPage = () => {
                 to="/login"
                 className="block w-full h-12 flex items-center justify-center gap-2 px-4 border border-transparent rounded-lg bg-[#141414] dark:bg-white text-white dark:text-[#141414] hover:opacity-90 active:scale-[0.98] transition-all text-sm font-bold"
               >
-                <span className="material-symbols-outlined text-[20px]">login</span>
+                <LoginRounded className="text-[20px]" />
                 <span>Retour à la connexion</span>
               </Link>
             </div>
@@ -160,7 +170,7 @@ const ForgotPasswordPage = () => {
             <div className="aspect-square w-full rounded-3xl overflow-hidden shadow-2xl transform -rotate-3 hover:rotate-0 transition-transform duration-700 bg-gradient-to-br from-neutral-800 to-neutral-900 border border-white/10 flex items-center justify-center">
               <div className="absolute inset-0 bg-cover bg-center mix-blend-overlay opacity-60" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1632759145682-c723b7c9e59f?w=800&q=80')", backgroundPosition: 'center' }}></div>
               <div className="relative z-20 text-white text-center p-8">
-                <span className="material-symbols-outlined text-6xl mb-6 opacity-80">password</span>
+                <PasswordRounded className="text-6xl mb-6 opacity-80" />
                 <h2 className="text-3xl font-bold mb-4 tracking-tight">Mot de passe oublié ?</h2>
                 <p className="text-neutral-400 text-lg leading-relaxed">Pas de souci ! Nous vous enverrons un lien de récupération pour réinitialiser votre mot de passe.</p>
               </div>
@@ -194,7 +204,7 @@ const ForgotPasswordPage = () => {
               to="/login"
               className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-[#141414] dark:hover:text-white transition-colors w-fit"
             >
-              <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+              <ArrowBackRounded className="text-[20px]" />
               <span>Retour à la connexion</span>
             </Link>
 
@@ -252,7 +262,7 @@ const ForgotPasswordPage = () => {
               ) : (
                 <>
                   <span>Envoyer le lien de réinitialisation</span>
-                  <span className="material-symbols-outlined text-[20px]">send</span>
+                  <SendRounded className="text-[20px]" />
                 </>
               )}
             </button>

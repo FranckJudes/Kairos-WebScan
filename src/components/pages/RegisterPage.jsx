@@ -4,8 +4,12 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import VisibilityRounded from '@mui/icons-material/VisibilityRounded'
-import VisibilityOffRounded from '@mui/icons-material/VisibilityOffRounded'
+import {
+  VisibilityRounded,
+  VisibilityOffRounded,
+  SecurityRounded,
+  ArrowForwardRounded
+} from '@mui/icons-material'
 
 const passwordSchema = z.string()
   .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
@@ -148,7 +152,7 @@ const RegisterPage = () => {
             <div className="aspect-square w-full rounded-3xl overflow-hidden shadow-2xl transform -rotate-3 hover:rotate-0 transition-transform duration-700 bg-gradient-to-br from-neutral-800 to-neutral-900 border border-white/10 flex items-center justify-center">
               <div className="absolute inset-0 bg-cover bg-center mix-blend-overlay opacity-60" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&q=80')", backgroundPosition: 'center' }}></div>
               <div className="relative z-20 text-white text-center p-8">
-                <span className="material-symbols-outlined text-6xl mb-6 opacity-80">security</span>
+                <SecurityRounded className="text-6xl mb-6 opacity-80" />
                 <h2 className="text-3xl font-bold mb-4 tracking-tight">Sécurité Renforcée</h2>
                 <p className="text-neutral-400 text-lg leading-relaxed">Protégez vos applications avec Kairos WebScan et détectez les vulnérabilités avant qu'elles ne soient exploitées.</p>
               </div>
@@ -424,7 +428,7 @@ const RegisterPage = () => {
               ) : (
                 <>
                   <span>Créer mon compte</span>
-                  <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
+                  <ArrowForwardRounded className="text-[20px]" />
                 </>
               )}
             </button>

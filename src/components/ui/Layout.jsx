@@ -3,7 +3,9 @@ import Header from '../layout/Header'
 import UnifiedRibbon from '../layout/ribbons/UnifiedRibbon'
 import SubNavigation from '../layout/SubNavigation'
 import Footer from '../layout/Footer'
+import AccountSidebar from '../AccountSidebar'
 import { Outlet } from 'react-router-dom'
+import { AccountSidebarProvider } from '../../contexts/AccountSidebarContext'
 
 // Context pour gérer l'état de la sidebar mobile
 const SidebarContext = createContext({
@@ -27,17 +29,20 @@ function Layout() {
   }
 
   return (
-    <SidebarContext.Provider value={sidebarContextValue}>
-      <div className="h-screen flex flex-col bg-white dark:bg-dark-bg text-[#605e5c] dark:text-dark-text overflow-hidden transition-colors duration-200">
-        <Header onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
-        <UnifiedRibbon />
-        <SubNavigation />
-        <div className="flex-1 overflow-hidden">
-          <Outlet />
+    <AccountSidebarProvider>
+      <SidebarContext.Provider value={sidebarContextValue}>
+        <div className="h-screen flex flex-col bg-white dark:bg-dark-bg text-[#605e5c] dark:text-dark-text overflow-hidden transition-colors duration-200">
+          <Header onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
+          <UnifiedRibbon />
+          <SubNavigation />
+          <div className="flex-1 overflow-hidden">
+            <Outlet />
+          </div>
+          <Footer />
         </div>
-        <Footer />
-      </div>
-    </SidebarContext.Provider>
+        <AccountSidebar />
+      </SidebarContext.Provider>
+    </AccountSidebarProvider>
   )
 }
 

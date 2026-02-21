@@ -1,16 +1,14 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import {
   PersonRounded,
   CenterFocusStrongRounded,
   FolderRounded,
-  TranslateRounded,
-  DarkModeRounded,
-  NotificationsRounded,
-  HelpOutlineRounded,
   SettingsRounded,
-  KeyboardArrowLeftRounded
+  HelpOutlineRounded,
+  TuneRounded,
+  LogoutRounded
 } from '@mui/icons-material'
 import toast from 'react-hot-toast'
 
@@ -21,6 +19,7 @@ import AccountDocuments from './account/AccountDocuments'
 import AccountPreferences from './account/AccountPreferences'
 import AccountHelp from './account/AccountHelp'
 import AccountSettings from './account/AccountSettings'
+import AccountFooter from './account/AccountFooter'
 
 const SECTIONS = [
   { id: 'profile', label: 'Informations du compte', icon: PersonRounded },
@@ -28,17 +27,17 @@ const SECTIONS = [
   { id: 'documents', label: 'Documents récents', icon: FolderRounded },
   { id: 'preferences', label: 'Préférences', icon: SettingsRounded },
   { id: 'help', label: 'Aide et support', icon: HelpOutlineRounded },
-  { id: 'settings', label: 'Paramètres', icon: SettingsRounded },
+  { id: 'settings', label: 'Paramètres', icon: TuneRounded },
 ]
 
 const AccountPage = () => {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [activeSection, setActiveSection] = useState('profile')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-  // Récupérer la section depuis l'URL (hash ou query param)
+  // Récupérer la section depuis l'URL (hash)
   useEffect(() => {
     const hash = location.hash.replace('#', '')
     if (hash && SECTIONS.find(s => s.id === hash)) {
@@ -52,8 +51,10 @@ const AccountPage = () => {
     navigate(`/account#${sectionId}`, { replace: true })
   }
 
-  const handleBackToHome = () => {
-    navigate('/')
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+    toast.success('Déconnexion réussie')
   }
 
   const getInitials = (firstName, lastName, email) => {
@@ -68,11 +69,11 @@ const AccountPage = () => {
 
   const getAvatarColor = (name) => {
     const colors = [
+      'bg-pink-500',
       'bg-blue-500',
       'bg-purple-500',
       'bg-green-500',
       'bg-orange-500',
-      'bg-pink-500',
       'bg-teal-500',
       'bg-indigo-500',
       'bg-red-500'
@@ -83,56 +84,37 @@ const AccountPage = () => {
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-[#605e5c] dark:text-dark-text">Chargement...</p>
+      <div className="flex items-center justify-center h-screen bg-slate-50 dark:bg-dark-bg">
+        <p className="text-slate-500 dark:text-dark-textTertiary">Chargement...</p>
       </div>
     )
   }
 
   const initials = getInitials(user.first_name, user.last_name, user.email)
   const avatarColor = getAvatarColor(user.first_name || user.email)
-  const ActiveIcon = SECTIONS.find(s => s.id === activeSection)?.icon || PersonRounded
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-dark-bgSecondary">
-      {/* Header de la page */}
-      <div className="px-6 py-4 border-b border-[#edebe9] dark:border-dark-border">
-        <div className="flex items-center gap-4 mb-4">
-          <button
-            onClick={handleBackToHome}
-            className="p-2 hover:bg-[#f3f2f1] dark:hover:bg-dark-hover rounded-lg transition-colors"
-            title="Retour à l'accueil"
-          >
-            <KeyboardArrowLeftRounded className="w-5 h-5 text-[#605e5c] dark:text-dark-text" />
-          </button>
-          <h1 className="text-2xl font-bold text-[#605e5c] dark:text-dark-text">
-            Mon compte
-          </h1>
-        </div>
-
-        {/* Profil summary */}
-        <div className="flex items-center gap-4">
-          <div className={`w-12 h-12 ${avatarColor} rounded-full flex items-center justify-center text-white text-lg font-medium`}>
-            {initials}
+    <div className="h-screen bg-slate-50 dark:bg-dark-bg flex overflow-hidden">
+      {/* Sidebar Desktop */}
+      <aside className="hidden lg:flex w-80 flex-col border-r border-slate-200/60 dark:border-dark-border bg-white dark:bg-dark-bgSecondary flex-shrink-0">
+        <div className="p-8">
+          {/* Profil utilisateur en haut de sidebar */}
+          <div className="flex items-center gap-4 mb-10">
+            <div className={`w-12 h-12 rounded-full ${avatarColor} flex items-center justify-center text-white font-semibold text-lg shadow-lg shadow-current/20`}>
+              {initials}
+            </div>
+            <div>
+              <p className="font-semibold text-slate-900 dark:text-dark-text leading-tight">
+                {user.first_name && user.last_name
+                  ? `${user.first_name} ${user.last_name}`
+                  : 'Utilisateur'}
+              </p>
+              <p className="text-sm text-slate-500 dark:text-dark-textTertiary">{user.email}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-semibold text-[#605e5c] dark:text-dark-text">
-              {user.first_name && user.last_name
-                ? `${user.first_name} ${user.last_name}`
-                : 'Utilisateur'}
-            </p>
-            <p className="text-xs text-[#c8c6c4] dark:text-dark-textTertiary">
-              {user.email}
-            </p>
-          </div>
-        </div>
-      </div>
 
-      {/* Contenu principal */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar de navigation - Desktop */}
-        <div className="hidden md:flex w-64 flex-col border-r border-[#edebe9] dark:border-dark-border overflow-y-auto">
-          <nav className="flex-1 p-4 space-y-1">
+          {/* Navigation */}
+          <nav className="space-y-2">
             {SECTIONS.map((section) => {
               const Icon = section.icon
               const isActive = activeSection === section.id
@@ -141,13 +123,13 @@ const AccountPage = () => {
                 <button
                   key={section.id}
                   onClick={() => handleSectionChange(section.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all group ${
                     isActive
-                      ? 'bg-[#106EBE] text-white dark:bg-blue-600'
-                      : 'text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover'
+                      ? 'bg-[#106EBE]/10 text-[#106EBE] dark:text-blue-500'
+                      : 'text-slate-500 dark:text-dark-textSecondary hover:bg-slate-100 dark:hover:bg-dark-hover'
                   }`}
                 >
-                  <Icon className={`w-5 h-5 ${isActive ? 'text-white' : ''}`} />
+                  <Icon className={`w-5 h-5 ${isActive ? 'fill-current' : ''}`} />
                   <span>{section.label}</span>
                 </button>
               )
@@ -155,58 +137,105 @@ const AccountPage = () => {
           </nav>
         </div>
 
-        {/* Menu mobile */}
-        <div className="md:hidden">
+        {/* Bouton Déconnexion en bas */}
+        <div className="mt-auto p-8">
           <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="fixed bottom-4 right-4 z-40 p-4 bg-[#106EBE] dark:bg-blue-600 text-white rounded-full shadow-lg"
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all w-full"
           >
-            <ActiveIcon className="w-6 h-6" />
+            <LogoutRounded className="w-5 h-5" />
+            <span className="font-medium">Déconnexion</span>
           </button>
+        </div>
+      </aside>
 
-          {isMobileMenuOpen && (
-            <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setIsMobileMenuOpen(false)}>
-              <div
-                className="absolute bottom-20 right-4 w-64 bg-white dark:bg-dark-bgSecondary rounded-lg shadow-xl border border-[#edebe9] dark:border-dark-border"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <nav className="p-2 space-y-1">
-                  {SECTIONS.map((section) => {
-                    const Icon = section.icon
-                    const isActive = activeSection === section.id
+      {/* Contenu principal */}
+      <main className="flex-1 max-w-5xl mx-auto px-6 md:px-8 lg:px-16 py-8 md:py-12 overflow-y-auto h-full">
+        <div className="h-full">
+          {activeSection === 'profile' && <AccountProfile user={user} />}
+          {activeSection === 'license' && <AccountLicense user={user} />}
+          {activeSection === 'documents' && <AccountDocuments user={user} />}
+          {activeSection === 'preferences' && <AccountPreferences user={user} />}
+          {activeSection === 'help' && <AccountHelp user={user} />}
+          {activeSection === 'settings' && <AccountSettings user={user} />}
+          {!activeSection.includes('profile') && <AccountFooter />}
+        </div>
+      </main>
 
-                    return (
-                      <button
-                        key={section.id}
-                        onClick={() => handleSectionChange(section.id)}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                          isActive
-                            ? 'bg-[#106EBE] text-white dark:bg-blue-600'
-                            : 'text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover'
-                        }`}
-                      >
-                        <Icon className={`w-5 h-5 ${isActive ? 'text-white' : ''}`} />
-                        <span>{section.label}</span>
-                      </button>
-                    )
-                  })}
-                </nav>
+      {/* Menu mobile */}
+      <div className="lg:hidden fixed bottom-6 right-6 z-40">
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="w-14 h-14 rounded-full bg-white dark:bg-dark-bgTertiary shadow-2xl border border-slate-200 dark:border-dark-borderLight flex items-center justify-center text-slate-600 dark:text-dark-textSecondary hover:scale-110 transition-transform active:scale-105"
+        >
+          {isMobileMenuOpen ? (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          )}
+        </button>
+
+        {isMobileMenuOpen && (
+          <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setIsMobileMenuOpen(false)}>
+            <div
+              className="absolute bottom-24 right-6 w-72 bg-white dark:bg-dark-bgSecondary rounded-2xl shadow-2xl border border-slate-200 dark:border-dark-border p-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Profil utilisateur mobile */}
+              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-200 dark:border-dark-border">
+                <div className={`w-10 h-10 rounded-full ${avatarColor} flex items-center justify-center text-white font-medium text-lg`}>
+                  {initials}
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-900 dark:text-dark-text text-sm">
+                    {user.first_name && user.last_name
+                      ? `${user.first_name} ${user.last_name}`
+                      : 'Utilisateur'}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-dark-textTertiary">{user.email}</p>
+                </div>
+              </div>
+
+              {/* Navigation mobile */}
+              <nav className="space-y-1">
+                {SECTIONS.map((section) => {
+                  const Icon = section.icon
+                  const isActive = activeSection === section.id
+
+                  return (
+                    <button
+                      key={section.id}
+                      onClick={() => handleSectionChange(section.id)}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                        isActive
+                          ? 'bg-[#106EBE]/10 text-[#106EBE] dark:text-blue-500'
+                          : 'text-slate-500 dark:text-dark-textSecondary hover:bg-slate-100 dark:hover:bg-dark-hover'
+                      }`}
+                    >
+                      <Icon className={`w-5 h-5 ${isActive ? 'fill-current' : ''}`} />
+                      <span>{section.label}</span>
+                    </button>
+                  )
+                })}
+              </nav>
+
+              {/* Bouton déconnexion mobile */}
+              <div className="mt-4 pt-4 border-t border-slate-200 dark:border-dark-border">
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all w-full"
+                >
+                  <LogoutRounded className="w-5 h-5" />
+                  <span className="font-medium">Déconnexion</span>
+                </button>
               </div>
             </div>
-          )}
-        </div>
-
-        {/* Contenu de la section active */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-6">
-            {activeSection === 'profile' && <AccountProfile user={user} />}
-            {activeSection === 'license' && <AccountLicense user={user} />}
-            {activeSection === 'documents' && <AccountDocuments user={user} />}
-            {activeSection === 'preferences' && <AccountPreferences user={user} />}
-            {activeSection === 'help' && <AccountHelp user={user} />}
-            {activeSection === 'settings' && <AccountSettings user={user} />}
           </div>
-        </div>
+        )}
       </div>
     </div>
   )

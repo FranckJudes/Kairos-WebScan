@@ -1,19 +1,23 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useAccountSidebar } from '../contexts/AccountSidebarContext'
 import {
   PersonRounded,
+  LockRounded,
   SettingsRounded,
   LogoutRounded,
   HelpOutlineRounded,
   KeyboardArrowDownRounded,
   FolderRounded,
-  CenterFocusStrongRounded
+  CenterFocusStrongRounded,
+  CloudRounded
 } from '@mui/icons-material'
 
 const AccountMenu = () => {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const { openAccountSidebar } = useAccountSidebar()
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef(null)
 
@@ -31,6 +35,7 @@ const AccountMenu = () => {
   const handleLogout = async () => {
     await logout()
     navigate('/login')
+    setIsOpen(false)
   }
 
   const getInitials = (firstName, lastName, email) => {
@@ -133,34 +138,70 @@ const AccountMenu = () => {
             <button
               onClick={() => {
                 setIsOpen(false)
-                navigate('/account#profile')
+                openAccountSidebar('profile')
               }}
               className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors"
             >
               <PersonRounded className="w-5 h-5 text-[#605e5c] dark:text-dark-textTertiary" />
-              <span>Informations du compte</span>
+              <span>Profil</span>
             </button>
 
             <button
               onClick={() => {
                 setIsOpen(false)
-                navigate('/account#license')
+                openAccountSidebar('license')
               }}
               className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors"
             >
               <CenterFocusStrongRounded className="w-5 h-5 text-[#605e5c] dark:text-dark-textTertiary" />
-              <span>Mes licences</span>
+              <span>Licences</span>
             </button>
 
             <button
               onClick={() => {
                 setIsOpen(false)
-                navigate('/account#documents')
+                openAccountSidebar('documents')
               }}
               className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors"
             >
               <FolderRounded className="w-5 h-5 text-[#605e5c] dark:text-dark-textTertiary" />
-              <span>Documents récents</span>
+              <span>Documents</span>
+            </button>
+
+            {/* Sécurité */}
+            <div className="px-3 py-2 mt-2">
+              <p className="px-3 text-xs font-semibold text-[#605e5c] dark:text-dark-text uppercase tracking-wider">
+                Sécurité
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                setIsOpen(false)
+                openAccountSidebar('security')
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors"
+            >
+              <LockRounded className="w-5 h-5 text-[#605e5c] dark:text-dark-textTertiary" />
+              <span>Mot de passe et 2FA</span>
+            </button>
+
+            {/* Stockage */}
+            <div className="px-3 py-2 mt-2">
+              <p className="px-3 text-xs font-semibold text-[#605e5c] dark:text-dark-text uppercase tracking-wider">
+                Stockage
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                setIsOpen(false)
+                openAccountSidebar('storage')
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors"
+            >
+              <CloudRounded className="w-5 h-5 text-[#605e5c] dark:text-dark-textTertiary" />
+              <span>Espace et fichiers</span>
             </button>
 
             {/* Préférences */}
@@ -173,7 +214,7 @@ const AccountMenu = () => {
             <button
               onClick={() => {
                 setIsOpen(false)
-                navigate('/account#preferences')
+                openAccountSidebar('preferences')
               }}
               className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors"
             >
@@ -191,18 +232,18 @@ const AccountMenu = () => {
             <button
               onClick={() => {
                 setIsOpen(false)
-                navigate('/account#help')
+                openAccountSidebar('help')
               }}
               className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors"
             >
               <HelpOutlineRounded className="w-5 h-5 text-[#605e5c] dark:text-dark-textTertiary" />
-              <span>Aide et support</span>
+              <span>Aide</span>
             </button>
 
             <button
               onClick={() => {
                 setIsOpen(false)
-                navigate('/account#settings')
+                openAccountSidebar('settings')
               }}
               className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors"
             >

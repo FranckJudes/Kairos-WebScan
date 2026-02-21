@@ -1,4 +1,11 @@
 import { Link, useLocation } from 'react-router-dom'
+import {
+  MarkEmailReadRounded,
+  CheckCircleRounded,
+  MailRounded,
+  RefreshRounded,
+  HomeRounded
+} from '@mui/icons-material'
 
 const RegisterConfirmationPage = () => {
   const location = useLocation()
@@ -16,7 +23,7 @@ const RegisterConfirmationPage = () => {
             <div className="aspect-square w-full rounded-3xl overflow-hidden shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-700 bg-gradient-to-br from-neutral-800 to-neutral-900 border border-white/10 flex items-center justify-center">
               <div className="absolute inset-0 bg-cover bg-center mix-blend-overlay opacity-60" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?w=800&q=80')", backgroundPosition: 'center' }}></div>
               <div className="relative z-20 text-white text-center p-8">
-                <span className="material-symbols-outlined text-6xl mb-6 opacity-80">mark_email_read</span>
+                <MarkEmailReadRounded className="text-6xl mb-6 opacity-80" />
                 <h2 className="text-3xl font-bold mb-4 tracking-tight">Vérification en cours</h2>
                 <p className="text-neutral-400 text-lg leading-relaxed">Activez votre compte pour commencer à sécuriser vos applications avec Kairos WebScan.</p>
               </div>
@@ -38,7 +45,7 @@ const RegisterConfirmationPage = () => {
           {/* Success Icon */}
           <div className="flex justify-center">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full">
-              <span className="material-symbols-outlined text-5xl text-green-600 dark:text-green-400">check_circle</span>
+              <CheckCircleRounded className="text-5xl text-green-600 dark:text-green-400" />
             </div>
           </div>
 
@@ -57,7 +64,7 @@ const RegisterConfirmationPage = () => {
           <div className="bg-[#f7f7f7] dark:bg-neutral-900 rounded-2xl p-6 space-y-4">
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0 w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-[20px]">mail</span>
+                <MailRounded className="text-blue-600 dark:text-blue-400 text-[20px]" />
               </div>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-[#141414] dark:text-neutral-200 mb-1">
@@ -95,7 +102,7 @@ const RegisterConfirmationPage = () => {
               onClick={() => window.location.reload()}
               className="w-full h-12 flex items-center justify-center gap-2 px-4 border border-neutral-200 dark:border-neutral-800 rounded-lg bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-sm font-semibold text-[#141414] dark:text-white"
             >
-              <span className="material-symbols-outlined text-[20px]">refresh</span>
+              <RefreshRounded className="text-[20px]" />
               <span>Renvoyer l'email</span>
             </button>
 
@@ -103,7 +110,7 @@ const RegisterConfirmationPage = () => {
               to="/"
               className="block w-full h-12 flex items-center justify-center gap-2 px-4 border border-transparent rounded-lg bg-[#141414] dark:bg-white text-white dark:text-[#141414] hover:opacity-90 active:scale-[0.98] transition-all text-sm font-bold"
             >
-              <span className="material-symbols-outlined text-[20px]">home</span>
+              <HomeRounded className="text-[20px]" />
               <span>Retour à l'accueil</span>
             </Link>
 
