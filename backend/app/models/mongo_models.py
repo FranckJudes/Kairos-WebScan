@@ -167,6 +167,14 @@ class User(Document):
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
 
+    # Profil étendu
+    job_title: Optional[str] = None
+    bio: Optional[str] = None
+    linkedin: Optional[str] = None
+    twitter: Optional[str] = None
+    website: Optional[str] = None
+    location: Optional[str] = None
+
     # Statut et vérification
     status: UserStatusEnum = UserStatusEnum.PENDING
     is_email_verified: bool = False

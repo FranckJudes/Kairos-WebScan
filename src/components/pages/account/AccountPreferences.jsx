@@ -1,24 +1,34 @@
-import { useState, useEffect } from 'react'
-import { TranslateRounded, DarkModeRounded, NotificationsRounded, VolumeUpRounded } from '@mui/icons-material'
+import { useState } from 'react'
+import {
+  TranslateRounded,
+  DarkModeRounded,
+  NotificationsRounded,
+  VolumeUpRounded,
+  WbSunnyRounded,
+  BedtimeRounded,
+  AutoAwesomeRounded,
+  EmailRounded,
+  SmartphoneRounded,
+  VolumeOffRounded,
+  LanguageRounded,
+  CheckCircleRounded
+} from '@mui/icons-material'
 import { useDarkMode } from '../../../hooks/useDarkMode'
+import useTranslation from '../../../hooks/useTranslation'
+import useUserProfile from '../../../hooks/useUserProfile'
+import apiAuth from '../../../services/apiAuth'
+import toast from 'react-hot-toast'
 
-const AccountPreferences = ({ user }) => {
+const AccountPreferences = () => {
   const { isDarkMode, toggleDarkMode } = useDarkMode()
-  const [language, setLanguage] = useState('fr')
+  const { user } = useUserProfile()
+  const { language, setLanguage, t, languages } = useTranslation('fr', user)
   const [notifications, setNotifications] = useState({
     email: true,
     push: false,
     sms: false
   })
   const [soundEnabled, setSoundEnabled] = useState(true)
-
-  const languages = [
-    { code: 'fr', label: 'Français', flag: '🇫🇷' },
-    { code: 'en', label: 'English', flag: '🇬🇧' },
-    { code: 'es', label: 'Español', flag: '🇪🇸' },
-    { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
-    { code: 'it', label: 'Italiano', flag: '🇮🇹' }
-  ]
 
   const handleNotificationChange = (type) => {
     setNotifications(prev => ({
@@ -27,10 +37,21 @@ const AccountPreferences = ({ user }) => {
     }))
   }
 
+  const handleLanguageChange = async (langCode) => {
+    setLanguage(langCode)
+    // Mettre à jour les préférences utilisateur sur le backend
+    try {
+      await apiAuth.updatePreferences({ language: langCode })
+      toast.success(t('account.preferences') + ' ' + t('account.language') + ' ' + t('account.system').toLowerCase())
+    } catch (error) {
+      toast.error('Erreur lors de la mise à jour de la langue')
+    }
+  }
+
   return (
     <div className="max-w-3xl space-y-6">
       <h2 className="text-xl font-bold text-[#605e5c] dark:text-dark-text mb-6">
-        Préférences
+        {t('account.preferences')}
       </h2>
 
       {/* Langue */}
@@ -42,10 +63,10 @@ const AccountPreferences = ({ user }) => {
             </div>
             <div>
               <h3 className="text-base font-semibold text-[#605e5c] dark:text-dark-text">
-                Langue
+                {t('account.language')}
               </h3>
               <p className="text-xs text-[#c8c6c4] dark:text-dark-textTertiary">
-                Choisissez votre langue préférée
+                {t('account.languageDescription')}
               </p>
             </div>
           </div>
@@ -56,19 +77,26 @@ const AccountPreferences = ({ user }) => {
             {languages.map((lang) => (
               <button
                 key={lang.code}
-                onClick={() => setLanguage(lang.code)}
+                onClick={() => handleLanguageChange(lang.code)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-colors ${
                   language === lang.code
                     ? 'border-[#106EBE] dark:border-blue-500 bg-[#106EBE]/10 dark:bg-blue-500/10'
                     : 'border-[#edebe9] dark:border-dark-border hover:border-[#106EBE]/50 dark:hover:border-blue-500/50'
                 }`}
               >
-                <span className="text-2xl">{lang.flag}</span>
-                <span className="text-sm font-medium text-[#605e5c] dark:text-dark-text">
-                  {lang.label}
+                <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-[#106EBE]/10 dark:bg-blue-500/10">
+                  <LanguageRounded className="w-6 h-6 text-[#106EBE] dark:text-blue-500" />
+                </div>
+                <span className="flex-1 text-left">
+                  <span className="block text-sm font-medium text-[#605e5c] dark:text-dark-text">
+                    {lang.label}
+                  </span>
+                  <span className="block text-xs text-[#c8c6c4] dark:text-dark-textTertiary">
+                    {lang.short}
+                  </span>
                 </span>
                 {language === lang.code && (
-                  <span className="ml-auto text-[#106EBE] dark:text-blue-500">✓</span>
+                  <CheckCircleRounded className="ml-2 text-[#106EBE] dark:text-blue-500 flex-shrink-0" />
                 )}
               </button>
             ))}
@@ -85,10 +113,10 @@ const AccountPreferences = ({ user }) => {
             </div>
             <div>
               <h3 className="text-base font-semibold text-[#605e5c] dark:text-dark-text">
-                Thème
+                {t('account.theme')}
               </h3>
               <p className="text-xs text-[#c8c6c4] dark:text-dark-textTertiary">
-                Personnalisez l'apparence de l'application
+                {t('account.themeDescription')}
               </p>
             </div>
           </div>
@@ -106,9 +134,9 @@ const AccountPreferences = ({ user }) => {
                   : 'border-[#edebe9] dark:border-dark-border hover:border-[#106EBE]/50 dark:hover:border-blue-500/50'
               }`}
             >
-              <span className="text-3xl">☀️</span>
+              <WbSunnyRounded className="text-3xl text-[#605e5c] dark:text-dark-text" />
               <span className="text-sm font-medium text-[#605e5c] dark:text-dark-text">
-                Clair
+                {t('account.light')}
               </span>
             </button>
 
@@ -122,20 +150,20 @@ const AccountPreferences = ({ user }) => {
                   : 'border-[#edebe9] dark:border-dark-border hover:border-[#106EBE]/50 dark:hover:border-blue-500/50'
               }`}
             >
-              <span className="text-3xl">🌙</span>
+              <BedtimeRounded className="text-3xl text-[#605e5c] dark:text-dark-text" />
               <span className="text-sm font-medium text-[#605e5c] dark:text-dark-text">
-                Sombre
+                {t('account.dark')}
               </span>
             </button>
 
             <button
               className="flex flex-col items-center gap-2 px-4 py-4 rounded-lg border-2 border-[#edebe9] dark:border-dark-border hover:border-[#106EBE]/50 dark:hover:border-blue-500/50 transition-colors opacity-50 cursor-not-allowed"
               disabled
-              title="Bientôt disponible"
+              title={t('account.systemSoon')}
             >
-              <span className="text-3xl">🔄</span>
+              <AutoAwesomeRounded className="text-3xl text-[#605e5c] dark:text-dark-text" />
               <span className="text-sm font-medium text-[#605e5c] dark:text-dark-text">
-                Système
+                {t('account.system')}
               </span>
             </button>
           </div>
@@ -151,10 +179,10 @@ const AccountPreferences = ({ user }) => {
             </div>
             <div>
               <h3 className="text-base font-semibold text-[#605e5c] dark:text-dark-text">
-                Notifications
+                {t('account.notifications')}
               </h3>
               <p className="text-xs text-[#c8c6c4] dark:text-dark-textTertiary">
-                Gérez vos préférences de notification
+                {t('account.notificationsDescription')}
               </p>
             </div>
           </div>
@@ -162,13 +190,16 @@ const AccountPreferences = ({ user }) => {
 
         <div className="p-4 space-y-3">
           <div className="flex items-center justify-between py-2">
-            <div>
-              <p className="text-sm font-medium text-[#605e5c] dark:text-dark-text">
-                Notifications par email
-              </p>
-              <p className="text-xs text-[#c8c6c4] dark:text-dark-textTertiary">
-                Recevez les mises à jour importantes par email
-              </p>
+            <div className="flex items-center gap-3">
+              <EmailRounded className="text-[#605e5c] dark:text-dark-textTertiary" />
+              <div>
+                <p className="text-sm font-medium text-[#605e5c] dark:text-dark-text">
+                  {t('account.notificationsByEmail')}
+                </p>
+                <p className="text-xs text-[#c8c6c4] dark:text-dark-textTertiary">
+                  {t('account.notificationsByEmailDescription')}
+                </p>
+              </div>
             </div>
             <button
               onClick={() => handleNotificationChange('email')}
@@ -185,13 +216,16 @@ const AccountPreferences = ({ user }) => {
           </div>
 
           <div className="flex items-center justify-between py-2 border-t border-[#edebe9] dark:border-dark-border">
-            <div>
-              <p className="text-sm font-medium text-[#605e5c] dark:text-dark-text">
-                Notifications push
-              </p>
-              <p className="text-xs text-[#c8c6c4] dark:text-dark-textTertiary">
-                Recevez les notifications dans le navigateur
-              </p>
+            <div className="flex items-center gap-3">
+              <NotificationsRounded className="text-[#605e5c] dark:text-dark-textTertiary" />
+              <div>
+                <p className="text-sm font-medium text-[#605e5c] dark:text-dark-text">
+                  {t('account.notificationsByPush')}
+                </p>
+                <p className="text-xs text-[#c8c6c4] dark:text-dark-textTertiary">
+                  {t('account.notificationsByPushDescription')}
+                </p>
+              </div>
             </div>
             <button
               onClick={() => handleNotificationChange('push')}
@@ -208,13 +242,16 @@ const AccountPreferences = ({ user }) => {
           </div>
 
           <div className="flex items-center justify-between py-2 border-t border-[#edebe9] dark:border-dark-border">
-            <div>
-              <p className="text-sm font-medium text-[#605e5c] dark:text-dark-text">
-                Notifications SMS
-              </p>
-              <p className="text-xs text-[#c8c6c4] dark:text-dark-textTertiary">
-                Recevez les alertes importantes par SMS
-              </p>
+            <div className="flex items-center gap-3">
+              <SmartphoneRounded className="text-[#605e5c] dark:text-dark-textTertiary" />
+              <div>
+                <p className="text-sm font-medium text-[#605e5c] dark:text-dark-text">
+                  {t('account.notificationsBySms')}
+                </p>
+                <p className="text-xs text-[#c8c6c4] dark:text-dark-textTertiary">
+                  {t('account.notificationsBySmsDescription')}
+                </p>
+              </div>
             </div>
             <button
               onClick={() => handleNotificationChange('sms')}
@@ -241,10 +278,10 @@ const AccountPreferences = ({ user }) => {
             </div>
             <div>
               <h3 className="text-base font-semibold text-[#605e5c] dark:text-dark-text">
-                Son
+                {t('account.sound')}
               </h3>
               <p className="text-xs text-[#c8c6c4] dark:text-dark-textTertiary">
-                Activez ou désactivez les sons de l'application
+                {t('account.soundDescription')}
               </p>
             </div>
           </div>
@@ -252,13 +289,20 @@ const AccountPreferences = ({ user }) => {
 
         <div className="p-4">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-[#605e5c] dark:text-dark-text">
-                Sons de l'application
-              </p>
-              <p className="text-xs text-[#c8c6c4] dark:text-dark-textTertiary">
-                Sons pour les notifications et actions
-              </p>
+            <div className="flex items-center gap-3">
+              {soundEnabled ? (
+                <VolumeUpRounded className="text-[#605e5c] dark:text-dark-textTertiary" />
+              ) : (
+                <VolumeOffRounded className="text-[#605e5c] dark:text-dark-textTertiary" />
+              )}
+              <div>
+                <p className="text-sm font-medium text-[#605e5c] dark:text-dark-text">
+                  {t('account.appSounds')}
+                </p>
+                <p className="text-xs text-[#c8c6c4] dark:text-dark-textTertiary">
+                  {t('account.appSoundsDescription')}
+                </p>
+              </div>
             </div>
             <button
               onClick={() => setSoundEnabled(!soundEnabled)}

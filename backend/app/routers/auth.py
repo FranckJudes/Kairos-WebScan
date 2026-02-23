@@ -1,7 +1,7 @@
 """
 Router API pour l'authentification et la gestion des comptes utilisateurs (MongoDB)
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Response, Cookie, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Cookie, Request, UploadFile, File
 from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
@@ -27,6 +27,7 @@ from ..models.auth_schemas import (
 from ..models.mongo_models import User, UserStatusEnum
 from ..services.user_service_mongo import UserService
 from ..services.auth import TokenManager, create_user_token, get_user_id_from_token
+from ..services.image_service import ImageService
 from ..services.email import get_email_service
 from ..cache import get_cache
 from ..tasks import send_verification_email, send_password_reset_email, send_welcome_email
@@ -245,6 +246,12 @@ async def login(
             last_name=user.last_name,
             phone=user.phone,
             avatar_url=user.avatar_url,
+            job_title=user.job_title,
+            bio=user.bio,
+            linkedin=user.linkedin,
+            twitter=user.twitter,
+            website=user.website,
+            location=user.location,
             status=user.status,
             is_email_verified=user.is_email_verified,
             language=user.language,
@@ -383,7 +390,14 @@ async def update_profile(
         user_id=str(current_user.id),
         first_name=request.first_name,
         last_name=request.last_name,
-        phone=request.phone
+        phone=request.phone,
+        avatar_url=request.avatar_url,
+        job_title=request.job_title,
+        bio=request.bio,
+        linkedin=request.linkedin,
+        twitter=request.twitter,
+        website=request.website,
+        location=request.location
     )
 
     if not user:
@@ -392,10 +406,6 @@ async def update_profile(
             detail="Utilisateur non trouvé"
         )
 
-    if request.avatar_url:
-        user.avatar_url = request.avatar_url
-        await user.save()
-
     return UserResponse(
         id=str(user.id),
         email=user.email,
@@ -403,6 +413,12 @@ async def update_profile(
         last_name=user.last_name,
         phone=user.phone,
         avatar_url=user.avatar_url,
+        job_title=user.job_title,
+        bio=user.bio,
+        linkedin=user.linkedin,
+        twitter=user.twitter,
+        website=user.website,
+        location=user.location,
         status=user.status,
         is_email_verified=user.is_email_verified,
         language=user.language,
@@ -411,6 +427,44 @@ async def update_profile(
         created_at=user.created_at,
         last_login_at=user.last_login_at
     )
+
+
+@router.post("/upload-avatar")
+async def upload_avatar(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_verified_user)
+):
+    """
+    Upload et redimensionne l'avatar d'un utilisateur
+
+    Valide l'image, la redimensionne (max 400x400px) et la sauvegarde.
+    """
+    # Valider l'image
+    ImageService.validate_image(file)
+
+    # Traiter et sauvegarder l'image
+    avatar_url = await ImageService.process_avatar(
+        file=file,
+        user_id=str(current_user.id)
+    )
+
+    # Mettre à jour l'utilisateur avec la nouvelle URL
+    user = await UserService.update_profile(
+        user_id=str(current_user.id),
+        avatar_url=avatar_url
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Utilisateur non trouvé"
+        )
+
+    return {
+        "success": True,
+        "message": "Avatar mis à jour avec succès",
+        "avatar_url": avatar_url
+    }
 
 
 @router.post("/change-password", response_model=MessageResponse)
@@ -474,6 +528,12 @@ async def update_preferences(
         last_name=user.last_name,
         phone=user.phone,
         avatar_url=user.avatar_url,
+        job_title=user.job_title,
+        bio=user.bio,
+        linkedin=user.linkedin,
+        twitter=user.twitter,
+        website=user.website,
+        location=user.location,
         status=user.status,
         is_email_verified=user.is_email_verified,
         language=user.language,

@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useAccountSidebar } from '../contexts/AccountSidebarContext'
+import useUserProfile from '../hooks/useUserProfile'
+import useTranslation from '../hooks/useTranslation'
 import {
   PersonRounded,
   LockRounded,
@@ -15,7 +17,9 @@ import {
 } from '@mui/icons-material'
 
 const AccountMenu = () => {
-  const { user, logout } = useAuth()
+  const { logout } = useAuth()
+  const { user, isLoading } = useUserProfile()
+  const { t } = useTranslation('fr', user)
   const navigate = useNavigate()
   const { openAccountSidebar } = useAccountSidebar()
   const [isOpen, setIsOpen] = useState(false)
@@ -27,7 +31,6 @@ const AccountMenu = () => {
         setIsOpen(false)
       }
     }
-
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
@@ -63,7 +66,7 @@ const AccountMenu = () => {
     return colors[index]
   }
 
-  if (!user) {
+  if (isLoading || !user) {
     return null
   }
 
@@ -78,8 +81,16 @@ const AccountMenu = () => {
         className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 dark:hover:bg-white/20 transition-colors text-white"
       >
         {/* Avatar */}
-        <div className={`w-8 h-8 ${avatarColor} rounded-full flex items-center justify-center text-white text-sm font-medium`}>
-          {initials}
+        <div className={`w-8 h-8 ${avatarColor} rounded-full flex items-center justify-center text-white text-sm font-medium overflow-hidden`}>
+          {user.avatar_url ? (
+            <img
+              src={`${import.meta.env.VITE_API_URL}${user.avatar_url}`}
+              alt="Avatar"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            initials
+          )}
         </div>
 
         {/* Nom complet (visible sur desktop) */}
@@ -103,14 +114,22 @@ const AccountMenu = () => {
           {/* Header avec infos utilisateur */}
           <div className="px-4 py-4 border-b border-[#edebe9] dark:border-dark-border">
             <div className="flex items-center gap-3">
-              <div className={`w-12 h-12 ${avatarColor} rounded-full flex items-center justify-center text-white text-lg font-medium`}>
-                {initials}
+              <div className={`w-12 h-12 ${avatarColor} rounded-full flex items-center justify-center text-white text-lg font-medium overflow-hidden`}>
+                {user.avatar_url ? (
+                  <img
+                    src={`${import.meta.env.VITE_API_URL}${user.avatar_url}`}
+                    alt="Avatar"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  initials
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-[#605e5c] dark:text-dark-text truncate">
                   {user.first_name && user.last_name
                     ? `${user.first_name} ${user.last_name}`
-                    : 'Utilisateur'}
+                    : t('menu.user')}
                 </p>
                 <p className="text-xs text-[#c8c6c4] dark:text-dark-textTertiary truncate">
                   {user.email}
@@ -120,7 +139,7 @@ const AccountMenu = () => {
                     ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
                     : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
                 }`}>
-                  {user.is_email_verified ? 'Vérifié' : 'Non vérifié'}
+                  {user.is_email_verified ? t('menu.verified') : t('menu.notVerified')}
                 </span>
               </div>
             </div>
@@ -131,7 +150,7 @@ const AccountMenu = () => {
             {/* Compte */}
             <div className="px-3 py-2">
               <p className="px-3 text-xs font-semibold text-[#605e5c] dark:text-dark-text uppercase tracking-wider">
-                Compte
+                {t('menu.account')}
               </p>
             </div>
 
@@ -143,7 +162,7 @@ const AccountMenu = () => {
               className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors"
             >
               <PersonRounded className="w-5 h-5 text-[#605e5c] dark:text-dark-textTertiary" />
-              <span>Profil</span>
+              <span>{t('menu.profile')}</span>
             </button>
 
             <button
@@ -154,7 +173,7 @@ const AccountMenu = () => {
               className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors"
             >
               <CenterFocusStrongRounded className="w-5 h-5 text-[#605e5c] dark:text-dark-textTertiary" />
-              <span>Licences</span>
+              <span>{t('menu.licenses')}</span>
             </button>
 
             <button
@@ -165,7 +184,7 @@ const AccountMenu = () => {
               className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors"
             >
               <FolderRounded className="w-5 h-5 text-[#605e5c] dark:text-dark-textTertiary" />
-              <span>Documents</span>
+              <span>{t('menu.documents')}</span>
             </button>
 
             {/* Sécurité */}
@@ -183,7 +202,7 @@ const AccountMenu = () => {
               className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors"
             >
               <LockRounded className="w-5 h-5 text-[#605e5c] dark:text-dark-textTertiary" />
-              <span>Mot de passe et 2FA</span>
+              <span>{t('menu.security')}</span>
             </button>
 
             {/* Stockage */}
@@ -201,7 +220,7 @@ const AccountMenu = () => {
               className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors"
             >
               <CloudRounded className="w-5 h-5 text-[#605e5c] dark:text-dark-textTertiary" />
-              <span>Espace et fichiers</span>
+              <span>{t('menu.storage')}</span>
             </button>
 
             {/* Préférences */}
@@ -219,7 +238,7 @@ const AccountMenu = () => {
               className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors"
             >
               <SettingsRounded className="w-5 h-5 text-[#605e5c] dark:text-dark-textTertiary" />
-              <span>Préférences</span>
+              <span>{t('menu.preferences')}</span>
             </button>
 
             {/* Autre */}
@@ -237,7 +256,7 @@ const AccountMenu = () => {
               className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors"
             >
               <HelpOutlineRounded className="w-5 h-5 text-[#605e5c] dark:text-dark-textTertiary" />
-              <span>Aide</span>
+              <span>{t('menu.help')}</span>
             </button>
 
             <button
@@ -248,7 +267,7 @@ const AccountMenu = () => {
               className="w-full flex items-center gap-3 px-3 py-2 text-sm text-[#605e5c] dark:text-dark-text hover:bg-[#f3f2f1] dark:hover:bg-dark-hover transition-colors"
             >
               <SettingsRounded className="w-5 h-5 text-[#605e5c] dark:text-dark-textTertiary" />
-              <span>Paramètres</span>
+              <span>{t('menu.settings')}</span>
             </button>
 
             {/* Déconnexion */}
@@ -258,7 +277,7 @@ const AccountMenu = () => {
                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               >
                 <LogoutRounded className="w-5 h-5" />
-                <span>Se déconnecter</span>
+                <span>{t('menu.logout')}</span>
               </button>
             </div>
           </div>

@@ -120,6 +120,12 @@ class UpdateProfileRequest(BaseModel):
     last_name: Optional[str] = Field(None, max_length=100)
     phone: Optional[str] = Field(None, max_length=20)
     avatar_url: Optional[str] = Field(None, max_length=500)
+    job_title: Optional[str] = Field(None, max_length=200)
+    bio: Optional[str] = Field(None, max_length=1000)
+    linkedin: Optional[str] = Field(None, max_length=500)
+    twitter: Optional[str] = Field(None, max_length=500)
+    website: Optional[str] = Field(None, max_length=500)
+    location: Optional[str] = Field(None, max_length=200)
 
 
 class ChangePasswordRequest(BaseModel):
@@ -164,6 +170,12 @@ class UserResponse(BaseModel):
     last_name: Optional[str] = None
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
+    job_title: Optional[str] = None
+    bio: Optional[str] = None
+    linkedin: Optional[str] = None
+    twitter: Optional[str] = None
+    website: Optional[str] = None
+    location: Optional[str] = None
     status: UserStatusEnum
     is_email_verified: bool
     language: Optional[str] = None

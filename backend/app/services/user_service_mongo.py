@@ -181,7 +181,14 @@ class UserService:
         user_id: str,
         first_name: Optional[str] = None,
         last_name: Optional[str] = None,
-        phone: Optional[str] = None
+        phone: Optional[str] = None,
+        avatar_url: Optional[str] = None,
+        job_title: Optional[str] = None,
+        bio: Optional[str] = None,
+        linkedin: Optional[str] = None,
+        twitter: Optional[str] = None,
+        website: Optional[str] = None,
+        location: Optional[str] = None,
     ) -> Optional[User]:
         """
         Met à jour le profil d'un utilisateur
@@ -191,6 +198,13 @@ class UserService:
             first_name: Prénom
             last_name: Nom
             phone: Téléphone
+            avatar_url: URL de l'avatar
+            job_title: Titre professionnel
+            bio: Bio
+            linkedin: LinkedIn
+            twitter: Twitter
+            website: Site web
+            location: Localisation
 
         Returns:
             Utilisateur mis à jour
@@ -206,6 +220,20 @@ class UserService:
             user.last_name = last_name
         if phone is not None:
             user.phone = phone
+        if avatar_url is not None:
+            user.avatar_url = avatar_url
+        if job_title is not None:
+            user.job_title = job_title
+        if bio is not None:
+            user.bio = bio
+        if linkedin is not None:
+            user.linkedin = linkedin
+        if twitter is not None:
+            user.twitter = twitter
+        if website is not None:
+            user.website = website
+        if location is not None:
+            user.location = location
 
         user.updated_at = datetime.utcnow()
         await user.save()
@@ -372,6 +400,12 @@ class UserService:
                 "last_name": user.last_name,
                 "phone": user.phone,
                 "avatar_url": user.avatar_url,
+                "job_title": user.job_title,
+                "bio": user.bio,
+                "linkedin": user.linkedin,
+                "twitter": user.twitter,
+                "website": user.website,
+                "location": user.location,
                 "status": user.status.value,
                 "is_email_verified": user.is_email_verified,
                 "language": user.language,

@@ -158,11 +158,46 @@ const apiAuth = {
           first_name: data.firstName,
           last_name: data.lastName,
           phone: data.phone,
-          avatar_url: data.avatarUrl
+          avatar_url: data.avatarUrl,
+          job_title: data.jobTitle,
+          bio: data.bio,
+          linkedin: data.linkedin,
+          twitter: data.twitter,
+          website: data.website,
+          location: data.location
         })
       })
       toast.success('Profil mis à jour avec succès')
       return response
+    } catch (error) {
+      toast.error(error.message)
+      throw error
+    }
+  },
+
+  /**
+   * Upload d'avatar
+   */
+  uploadAvatar: async (file) => {
+    try {
+      const token = getToken()
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch(`${API_BASE_URL}/api/auth/upload-avatar`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.detail || "Erreur lors de l'upload")
+      }
+
+      const data = await response.json()
+      toast.success('Avatar mis à jour avec succès')
+      return data
     } catch (error) {
       toast.error(error.message)
       throw error

@@ -220,6 +220,27 @@ async def get_page_image(document_id: str, filename: str):
     return response
 
 
+@app.get("/uploads/avatars/{filename}")
+async def get_avatar_image(filename: str):
+    """Servir les images avatars"""
+    file_path = os.path.join(UPLOAD_DIR, "avatars", filename)
+    if not os.path.exists(file_path):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Avatar non trouvé")
+
+    response = FileResponse(
+        file_path,
+        media_type="image/jpeg",
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+            "Cross-Origin-Resource-Policy": "cross-origin"
+        }
+    )
+    return response
+
+
 @app.get("/")
 def read_root():
     return {
