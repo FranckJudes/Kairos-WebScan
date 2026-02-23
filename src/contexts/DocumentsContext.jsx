@@ -21,9 +21,24 @@ export function DocumentsProvider({ children }) {
   const [selectedPageNumber, setSelectedPageNumber] = useState(1)
   const [orderedPages, setOrderedPages] = useState([])
   const [classifiedPages, setClassifiedPages] = useState({})
-  const [documentVersion, setDocumentVersion] = useState(0) 
+  const [documentVersion, setDocumentVersion] = useState(0)
 
   const seenPageIdsRef = useRef(new Set())
+
+  useEffect(() => {
+    const unsubscribe = queryClient.getQueryCache().subscribe(event => {
+      if (event.type === 'removed' && event.query.queryKey[0] === 'auth') {
+        setSelectedDocumentId(null)
+        setSelectedPageNumber(1)
+        setOrderedPages([])
+        setClassifiedPages({})
+        setDocumentVersion(prev => prev + 1) // Forcer le rechargement
+        seenPageIdsRef.current.clear()
+      }
+    })
+
+    return () => unsubscribe?.()
+  }, [queryClient])
 
   const { data: documentsData, isLoading, error, refetch } = useQuery({
     queryKey: ['documents', 'list'],
@@ -279,8 +294,6 @@ export function DocumentsProvider({ children }) {
     if (!eventEmitter) {
       return
     }
-
-
     const handleDocumentProcessing = (data) => {
 
       if (data.status === 'processing' && data.page_url) {

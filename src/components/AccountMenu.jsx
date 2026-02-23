@@ -190,7 +190,7 @@ const AccountMenu = () => {
             {/* Sécurité */}
             <div className="px-3 py-2 mt-2">
               <p className="px-3 text-xs font-semibold text-[#605e5c] dark:text-dark-text uppercase tracking-wider">
-                Sécurité
+                {t('menu.security') || 'Sécurité'}
               </p>
             </div>
 
@@ -208,7 +208,7 @@ const AccountMenu = () => {
             {/* Stockage */}
             <div className="px-3 py-2 mt-2">
               <p className="px-3 text-xs font-semibold text-[#605e5c] dark:text-dark-text uppercase tracking-wider">
-                Stockage
+                {t('menu.storage') || 'Stockage'}
               </p>
             </div>
 
@@ -226,7 +226,7 @@ const AccountMenu = () => {
             {/* Préférences */}
             <div className="px-3 py-2 mt-2">
               <p className="px-3 text-xs font-semibold text-[#605e5c] dark:text-dark-text uppercase tracking-wider">
-                Préférences
+                {t('menu.preferences') || 'Préférences'}
               </p>
             </div>
 
@@ -244,7 +244,7 @@ const AccountMenu = () => {
             {/* Autre */}
             <div className="px-3 py-2 mt-2">
               <p className="px-3 text-xs font-semibold text-[#605e5c] dark:text-dark-text uppercase tracking-wider">
-                Autre
+                {t('menu.other') || 'Autre'}
               </p>
             </div>
 

@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import { api } from '../services/api'
 
 export function useDocuments() {
@@ -13,6 +13,21 @@ export function useRecentDocuments(limit = 100) {
     queryKey: ['documents', 'recent', limit],
     queryFn: () => api.getRecentDocuments(limit),
     staleTime: 1000 * 60 * 2, // 2 minutes
+  })
+}
+
+export function useInfiniteRecentDocuments(limit = 20) {
+  return useInfiniteQuery({
+    queryKey: ['documents', 'recent', 'infinite', limit],
+    queryFn: ({ pageParam = 0 }) => api.getRecentDocuments(limit, pageParam),
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage || lastPage.length < limit) {
+        return undefined
+      }
+      return allPages.length * limit
+    },
+    initialPageParam: 0,
+    staleTime: 1000 * 60 * 2,
   })
 }
 
@@ -58,8 +73,27 @@ export function useDeleteDocument() {
   return useMutation({
     mutationFn: (documentId) => api.deleteDocument(documentId),
     onSuccess: () => {
-      // Invalider toutes les requêtes liées aux documents
       queryClient.invalidateQueries({ queryKey: ['documents'] })
     },
+  })
+}
+
+export function useRenameDocument() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ documentId, displayName }) => api.renameDocument(documentId, displayName),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] })
+    },
+  })
+}
+
+export function useSearchDocuments(query, filters = {}) {
+  return useQuery({
+    queryKey: ['documents', 'search', query, filters],
+    queryFn: () => api.searchDocuments(query, filters.documentType, filters.status),
+    enabled: query.length > 0,
+    staleTime: 1000 * 60,
   })
 }

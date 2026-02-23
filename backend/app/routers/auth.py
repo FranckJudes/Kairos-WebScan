@@ -2,12 +2,13 @@
 Router API pour l'authentification et la gestion des comptes utilisateurs (MongoDB)
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Cookie, Request, UploadFile, File
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from typing import Optional
+from typing import Optional, Any
 from datetime import datetime, timezone
+import json
 import secrets
-
+import string
 from ..models.auth_schemas import (
     RegisterRequest,
     LoginRequest,
@@ -77,7 +78,6 @@ def get_current_user(
             detail="Token d'authentification manquant",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
 
     user_id = get_user_id_from_token(token)
 
@@ -225,14 +225,14 @@ async def login(
     await UserService.update_last_login(str(user.id))
 
     access_token = create_user_token(str(user.id))
-    
+
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=False,  # Mettre à True en production avec HTTPS
+        secure=False,
         samesite="lax",
-        max_age=60 * 60 * 24,  # 24 heures
+        max_age=60 * 60 * 24,
         path="/"
     )
 

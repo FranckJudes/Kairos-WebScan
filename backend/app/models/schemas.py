@@ -53,6 +53,7 @@ class DocumentResponse(BaseModel):
     id: str
     filename: str
     original_name: str
+    display_name: Optional[str] = None
     mime_type: str
     size_bytes: int
     document_type: str
@@ -60,6 +61,13 @@ class DocumentResponse(BaseModel):
     url: str
     created_at: datetime
     updated_at: datetime
+
+
+class DocumentRenameRequest(BaseModel):
+    """Schéma pour renommer un document"""
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+    
+    display_name: str = Field(..., min_length=1, max_length=255)
 
 
 class BannetteCreate(BaseModel):

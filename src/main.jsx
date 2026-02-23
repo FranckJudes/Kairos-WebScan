@@ -7,6 +7,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { Toaster } from 'react-hot-toast'
 import './index.css'
 import { router } from './routes'
+import { initializeAppStates } from './app/appStateInitializer'
 
 const originalWarn = console.warn
 console.warn = function(...args) {
@@ -46,6 +47,33 @@ const queryClient = new QueryClient({
     },
   },
 })
+
+const initializeApp = async () => {
+  try {
+    await Promise.all([
+      queryClient.prefetchQuery({
+        queryKey: ['typology', 'tree'],
+        queryFn: () => fetch('/api/typology/tree').then(res => res.json()),
+        staleTime: 10 * 60 * 1000,
+      }),
+      queryClient.prefetchQuery({
+        queryKey: ['scan-profiles'],
+        queryFn: () => fetch('/api/scan-profiles').then(res => res.json()),
+        staleTime: 10 * 60 * 1000,
+      }),
+      queryClient.prefetchQuery({
+        queryKey: ['scan-settings', 'defaults'],
+        queryFn: () => fetch('/api/scan-settings/defaults').then(res => res.json()),
+        staleTime: 15 * 60 * 1000,
+      }),
+    ])
+  } catch (error) {
+    console.error('[Main] Erreur lors de l\'initialisation des états globaux:', error)
+  }
+}
+
+// Lancer l'initialisation
+initializeApp()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

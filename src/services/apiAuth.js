@@ -3,7 +3,10 @@ import { toast } from 'react-hot-toast'
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const getToken = () => {
-  return localStorage.getItem('token') || sessionStorage.getItem('token')
+  const localToken = localStorage.getItem('token')
+  const sessionToken = sessionStorage.getItem('token')
+  const token = sessionToken || localToken
+  return token
 }
 
 /**
@@ -18,9 +21,10 @@ const authFetch = async (endpoint, options = {}) => {
     ...options.headers
   }
 
+
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
-    credentials: 'include', 
+    credentials: 'include',
     headers
   })
 

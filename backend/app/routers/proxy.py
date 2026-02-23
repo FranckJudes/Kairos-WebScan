@@ -1,10 +1,11 @@
 from fastapi import APIRouter, HTTPException
 import requests
 from fastapi.responses import Response
-
+import os
 router = APIRouter(prefix="/proxy", tags=["Proxy"])
 
-SCAN_API_BASE_URL = "http://192.168.100.12:5000"
+# SCAN_API_BASE_URL = "http://192.168.100.12:5000"
+SCAN_API_BASE_URL = os.getenv("SCAN_API_BASE_URL")
 
 
 @router.get("/scan-image")

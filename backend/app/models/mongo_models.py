@@ -105,17 +105,20 @@ class DocumentModel(Document):
     """
     Modèle pour les documents uploadés
     """
-    user_id: str  
+    user_id: str
     filename: Indexed(str)
     original_name: str
+    display_name: Optional[str] = None
     mime_type: str
     size_bytes: int
     storage_path: str
-    
-    document_type: str = "OTHERS"  # Code de la typologie
-    status: str = "PROCESSED"  # PROCESSED, ERROR, PENDING
-    
-    # Dates
+
+    document_type: str = "OTHERS"
+    status: str = "PROCESSED"
+
+    # Référence vers la bannette
+    bannette_id: Optional[str] = None
+
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -124,6 +127,7 @@ class DocumentModel(Document):
         indexes = [
             "user_id",
             "document_type",
+            "bannette_id",
             "created_at",
         ]
 

@@ -1,28 +1,37 @@
 import { useState, useRef } from 'react'
 import { useAuth } from '../../../contexts/AuthContext'
+import useUserProfile from '../../../hooks/useUserProfile'
 import { CheckRounded, CloseRounded, PersonRounded, CalendarTodayRounded, ShieldRounded, CloudUploadRounded, DeleteRounded } from '@mui/icons-material'
 import toast from 'react-hot-toast'
 import AccountFooter from './AccountFooter'
 import apiAuth from '../../../services/apiAuth'
 
-const AccountProfile = ({ user }) => {
+const AccountProfile = () => {
+  const { user } = useUserProfile()
+  if (!user) {
+    return (
+      <div className="p-6 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[#106EBE] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    )
+  }
   const { updateUser } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
-  const [avatarPreview, setAvatarPreview] = useState(user.avatar_url || null)
+  const [avatarPreview, setAvatarPreview] = useState(user?.avatar_url || null)
   const fileInputRef = useRef(null)
 
   const [formData, setFormData] = useState({
-    first_name: user.first_name || '',
-    last_name: user.last_name || '',
-    email: user.email || '',
-    phone: user.phone || '',
-    job_title: user.job_title || '',
-    bio: user.bio || '',
-    linkedin: user.linkedin || '',
-    twitter: user.twitter || '',
-    website: user.website || '',
-    location: user.location || ''
+    first_name: user?.first_name || '',
+    last_name: user?.last_name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    job_title: user?.job_title || '',
+    bio: user?.bio || '',
+    linkedin: user?.linkedin || '',
+    twitter: user?.twitter || '',
+    website: user?.website || '',
+    location: user?.location || ''
   })
 
   const getInitials = (firstName, lastName, email) => {
@@ -414,16 +423,6 @@ const AccountProfile = ({ user }) => {
           </div>
 
           <div className="space-y-8 md:space-y-10">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-medium text-slate-500 dark:text-dark-textTertiary mb-1">ID utilisateur</p>
-                <p className="font-bold text-slate-900 dark:text-dark-text break-all tracking-tight">{user.id}</p>
-              </div>
-              <span className="text-xs font-mono text-slate-400 dark:text-dark-textSecondary hidden md:block select-all cursor-pointer hover:text-[#106EBE] dark:hover:text-blue-500 transition-colors">
-                #{user.id}
-              </span>
-            </div>
-
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-500 dark:text-dark-textTertiary mb-1">Membre depuis</p>

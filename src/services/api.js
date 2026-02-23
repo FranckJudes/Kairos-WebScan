@@ -1,11 +1,10 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const getToken = () => {
-  const localToken = localStorage.getItem('token')
   const sessionToken = sessionStorage.getItem('token')
-  const token = localToken || sessionToken
+  const localToken = localStorage.getItem('token')
+  const token = sessionToken || localToken
 
- 
   return token
 }
 
@@ -19,7 +18,7 @@ const authenticatedFetch = async (url, options = {}) => {
 
   const response = await fetch(url, {
     ...options,
-    credentials: 'include', 
+    credentials: 'include',
     headers
   })
 
@@ -32,12 +31,14 @@ const authenticatedFetch = async (url, options = {}) => {
 }
 
 export const api = {
-  async getDocuments() {
-    return authenticatedFetch(`${API_BASE_URL}/documents`)
+  async getDocuments(limit = 100, skip = 0) {
+    const params = new URLSearchParams({ limit, skip })
+    return authenticatedFetch(`${API_BASE_URL}/documents?${params.toString()}`)
   },
 
-  async getRecentDocuments(limit = 5) {
-    return authenticatedFetch(`${API_BASE_URL}/documents/recent?limit=${limit}`)
+  async getRecentDocuments(limit = 10, skip = 0) {
+    const params = new URLSearchParams({ limit, skip })
+    return authenticatedFetch(`${API_BASE_URL}/documents/recent?${params.toString()}`)
   },
 
   async getDocument(id) {
@@ -50,6 +51,25 @@ export const api = {
     })
   },
 
+  async renameDocument(id, displayName) {
+    return authenticatedFetch(`${API_BASE_URL}/documents/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ display_name: displayName }),
+    })
+  },
+
+  async searchDocuments(query = '', documentType = null, status = null, limit = 20) {
+    const params = new URLSearchParams()
+    if (query) params.append('q', query)
+    if (documentType) params.append('document_type', documentType)
+    if (status) params.append('status', status)
+    params.append('limit', limit)
+    return authenticatedFetch(`${API_BASE_URL}/documents/search?${params.toString()}`)
+  },
+
   async uploadDocument(file) {
     const formData = new FormData()
     formData.append('file', file)
@@ -58,11 +78,11 @@ export const api = {
     const headers = {}
     if (token) {
       headers['Authorization'] = `Bearer ${token}`
-    } 
+    }
 
     const response = await fetch(`${API_BASE_URL}/documents/upload`, {
       method: 'POST',
-      credentials: 'include', 
+      credentials: 'include',
       headers,
       body: formData,
     })
@@ -133,17 +153,17 @@ export const api = {
 
   // Bannettes - Récupérer toutes les bannettes
   async getBannettes() {
-    return authenticatedFetch(`${API_BASE_URL}/bannettes`)
+    return authenticatedFetch(`${API_BASE_URL}/bannettes/`)
   },
 
   // Bannettes - Récupérer une bannette
   async getBannette(id) {
-    return authenticatedFetch(`${API_BASE_URL}/bannettes/${id}`)
+    return authenticatedFetch(`${API_BASE_URL}/bannettes/${id}/`)
   },
 
   // Bannettes - Créer une nouvelle bannette
   async createBannette(data) {
-    return authenticatedFetch(`${API_BASE_URL}/bannettes`, {
+    return authenticatedFetch(`${API_BASE_URL}/bannettes/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -154,7 +174,7 @@ export const api = {
 
   // Bannettes - Mettre à jour une bannette
   async updateBannette(id, data) {
-    return authenticatedFetch(`${API_BASE_URL}/bannettes/${id}`, {
+    return authenticatedFetch(`${API_BASE_URL}/bannettes/${id}/`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -165,9 +185,22 @@ export const api = {
 
   // Bannettes - Supprimer une bannette
   async deleteBannette(id) {
-    return authenticatedFetch(`${API_BASE_URL}/bannettes/${id}`, {
+    return authenticatedFetch(`${API_BASE_URL}/bannettes/${id}/`, {
       method: 'DELETE',
     })
+  },
+
+  // Bannettes - Créer une bannette par défaut
+  async createDefaultBannette() {
+    return authenticatedFetch(`${API_BASE_URL}/bannettes/default`, {
+      method: 'POST',
+    })
+  },
+
+  // Documents - Récupérer les documents d'une bannette
+  async getDocumentsByBannette(bannetteId, limit = 100, skip = 0) {
+    const params = new URLSearchParams({ limit, skip })
+    return authenticatedFetch(`${API_BASE_URL}/documents/by-bannette/${bannetteId}?${params.toString()}`)
   },
 
   async uploadCroppedImage(canvas, filename) {

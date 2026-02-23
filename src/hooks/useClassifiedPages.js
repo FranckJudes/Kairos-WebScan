@@ -6,9 +6,6 @@ import { classificationApi } from '../services/classificationApi'
  * @param {Function} setStateCallback - Fonction pour mettre à jour l'état classifiedPages
  */
 export const useClassifiedPages = (setStateCallback) => {
-  if (!setStateCallback) {
-    console.warn('useClassifiedPages: No setStateCallback provided')
-  }
 
   const queryClient = useQueryClient()
 

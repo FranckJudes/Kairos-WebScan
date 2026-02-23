@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../services/api'
 import { useState } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 
 /**
  * Hook pour gérer les bannettes (sauvegardes d'état)
@@ -9,38 +10,49 @@ export const useBannettes = () => {
   const queryClient = useQueryClient()
   const [currentPage, setCurrentPage] = useState(0)
   const [pageSize] = useState(10)
+  const [triggerRefresh, setTriggerRefresh] = useState(0)
+  const { selectedBannetteId, setSelectedBannetteId } = useAuth()
 
-  // Liste des bannettes avec pagination
   const {
     data: bannettesData,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['bannettes', currentPage, pageSize],
+    queryKey: ['bannettes', currentPage, pageSize, triggerRefresh],
     queryFn: () => api.getBannettes(),
     staleTime: 1000 * 60 * 5, // 5 minutes
   })
 
-  // Pagination des données
-  const allBannettes = bannettesData?.bannettes || []
-  const total = bannettesData?.total || 0
+  const allBannettes = bannettesData || []
+  const total = bannettesData?.length || 0
 
-  // Calculer les bannettes pour la page courante
   const startIndex = currentPage * pageSize
   const endIndex = startIndex + pageSize
   const paginatedBannettes = allBannettes.slice(startIndex, endIndex)
   const totalPages = Math.ceil(total / pageSize)
 
-  // Créer une bannette
+  // Fonction pour obtenir toutes les bannettes (sans pagination)
+  const getAllBannettes = () => {
+    const data = queryClient.getQueryData(['bannettes', 0, pageSize])
+    return data || []
+  }
+
   const createBannetteMutation = useMutation({
     mutationFn: (data) => api.createBannette(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bannettes'] })
-      setCurrentPage(0) // Retour à la première page après création
+      setCurrentPage(0)
     },
   })
 
-  // Mettre à jour une bannette
+  const createDefaultBannetteMutation = useMutation({
+    mutationFn: () => api.createDefaultBannette(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bannettes'] })
+      setCurrentPage(0)
+    },
+  })
+
   const updateBannetteMutation = useMutation({
     mutationFn: ({ id, data }) => api.updateBannette(id, data),
     onSuccess: () => {
@@ -48,12 +60,10 @@ export const useBannettes = () => {
     },
   })
 
-  // Supprimer une bannette
   const deleteBannetteMutation = useMutation({
     mutationFn: (id) => api.deleteBannette(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bannettes'] })
-      // Ajuster la page si nécessaire
       if (paginatedBannettes.length === 1 && currentPage > 0) {
         setCurrentPage(currentPage - 1)
       }
@@ -62,13 +72,22 @@ export const useBannettes = () => {
 
   // Créer une bannette
   const createBannette = async (name, pagesOrder, classifiedPages, totalPages, description = null) => {
-    return createBannetteMutation.mutateAsync({
+    const result = await createBannetteMutation.mutateAsync({
       name,
       description,
       pages_order: pagesOrder,
       classified_pages: classifiedPages,
       total_pages: totalPages,
     })
+    // Sélectionner la nouvelle bannette créée
+    setSelectedBannetteId(result.id)
+    return result
+  }
+
+  // Sélectionner une bannette
+  const selectBannette = (bannetteId) => {
+    setSelectedBannetteId(bannetteId)
+    localStorage.setItem('selectedBannetteId', bannetteId)
   }
 
   // Mettre à jour une bannette
@@ -81,7 +100,6 @@ export const useBannettes = () => {
     return deleteBannetteMutation.mutateAsync(id)
   }
 
-  // Charger une bannette (récupérer les détails)
   const loadBannette = async (id) => {
     const response = await api.getBannette(id)
     return response
@@ -107,6 +125,7 @@ export const useBannettes = () => {
   return {
     bannettes: paginatedBannettes,
     allBannettes,
+    getAllBannettes,
     total,
     currentPage,
     totalPages,
@@ -115,14 +134,19 @@ export const useBannettes = () => {
     prevPage,
     goToPage,
     setCurrentPage,
+    refresh: () => setTriggerRefresh(prev => prev + 1),
     isLoading,
     error,
     createBannette,
+    createDefaultBannette: () => createDefaultBannetteMutation.mutateAsync(),
     updateBannette,
     deleteBannette,
     loadBannette,
+    selectBannette,
+    selectedBannetteId,
     isCreating: createBannetteMutation.isPending,
     isUpdating: updateBannetteMutation.isPending,
     isDeleting: deleteBannetteMutation.isPending,
+    isCreatingDefault: createDefaultBannetteMutation.isPending,
   }
 }

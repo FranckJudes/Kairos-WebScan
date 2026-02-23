@@ -1,31 +1,21 @@
-import { useQuery } from '@tanstack/react-query'
-import apiAuth from '../services/apiAuth'
+import { useAuth } from '../contexts/AuthContext'
 
 /**
- * Hook personnalisé pour récupérer le profil utilisateur via React Query
+ * Hook personnalisé pour récupérer le profil utilisateur
+ * Utilise les données depuis AuthContext pour éviter les requêtes dupliquées
  *
- * @returns {Object} - { user, isLoading, error }
+ * @returns {Object} - { user, isLoading, error, license, recentDocuments, isAuthenticated }
  */
 const useUserProfile = () => {
-  const { data: profile, isLoading, error } = useQuery({
-    queryKey: ['auth', 'profile'],
-    queryFn: () => apiAuth.getProfile(),
-    retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false,
-  })
-
-  const user = profile?.user
-  const license = profile?.license
-  const recentDocuments = profile?.recent_documents || []
+  const { user, isLoading, error, isAuthenticated } = useAuth()
 
   return {
     user,
-    license,
-    recentDocuments,
     isLoading,
     error,
-    isAuthenticated: !!user && !error,
+    isAuthenticated,
+    license: null, 
+    recentDocuments: [], 
   }
 }
 

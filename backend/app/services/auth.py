@@ -2,7 +2,7 @@
 Services d'authentification : JWT, hash de mot de passe, tokens de vérification
 """
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
 from jose import JWTError, jwt
 import bcrypt
@@ -55,15 +55,17 @@ class TokenManager:
             Token JWT encodé
         """
         to_encode = data.copy()
+        now = datetime.now(timezone.utc)
 
         if expires_delta:
-            expire = datetime.utcnow() + expires_delta
+            expire = now + expires_delta
         else:
-            expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+            expire = now + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+
 
         to_encode.update({
             "exp": expire,
-            "iat": datetime.utcnow(),
+            "iat": now,
             "type": "access"
         })
 
@@ -82,14 +84,16 @@ class TokenManager:
             Données du token ou None si invalide
         """
         try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            now = datetime.now(timezone.utc)
+
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM], options={"verify_exp": True})
 
             if payload.get("type") != "access":
                 return None
 
             exp = payload.get("exp")
-            now = datetime.utcnow()
-            exp_datetime = datetime.fromtimestamp(exp) if exp else None
+            now = datetime.now(timezone.utc)
+            exp_datetime = datetime.fromtimestamp(exp, tz=timezone.utc) if exp else None
 
 
             if exp and exp_datetime < now:
@@ -163,7 +167,8 @@ def get_user_id_from_token(token: str) -> Optional[int]:
     """
     payload = TokenManager.decode_access_token(token)
     if payload:
-        return payload.get("sub")
+        user_id = payload.get("sub")
+        return user_id
     return None
 
 

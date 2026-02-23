@@ -94,6 +94,38 @@ async def delete_bannette(
     bannette = await BannetteModel.get(bannette_id)
     if not bannette or bannette.user_id != str(current_user.id):
         raise HTTPException(status_code=404, detail="Bannette non trouvée")
-    
+
     await bannette.delete()
     return {"message": "Bannette supprimée avec succès"}
+
+
+@router.post("/default")
+async def create_default_bannette(
+    current_user: User = Depends(get_current_user_active)
+):
+    """Crée une bannette par défaut pour l'utilisateur"""
+    from datetime import datetime, timezone
+
+    # Vérifier si l'utilisateur a déjà une bannette
+    existing_bannette = await BannetteModel.find_one(
+        BannetteModel.user_id == str(current_user.id)
+    )
+
+    if existing_bannette:
+        return {"message": "L'utilisateur a déjà une bannette", "bannette_id": str(existing_bannette.id)}
+
+    # Créer une bannette par défaut
+    default_bannette = BannetteModel(
+        user_id=str(current_user.id),
+        name="Ma première bannette",
+        description="Bannette par défaut créée automatiquement",
+        pages_order=[],
+        classified_pages={},
+        total_pages=0
+    )
+    await default_bannette.insert()
+
+    return {
+        "message": "Bannette par défaut créée avec succès",
+        "bannette_id": str(default_bannette.id)
+    }

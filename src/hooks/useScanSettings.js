@@ -24,7 +24,7 @@ export const useScanSettings = (selectedProfileId) => {
 
     return {
       paperSize: profile.paper_size || DEFAULT_SETTINGS.paperSize,
-      scanMode: DEFAULT_SETTINGS.scanMode, // Mode non stocké dans le profil pour l'instant
+      scanMode: DEFAULT_SETTINGS.scanMode, 
       resolution: profile.resolution?.toString() || DEFAULT_SETTINGS.resolution,
       horizontalAlign: profile.horizontal_align || DEFAULT_SETTINGS.horizontalAlign,
       scale: profile.scale || DEFAULT_SETTINGS.scale,
